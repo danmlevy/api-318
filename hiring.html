@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Hiring Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+img{max-width:100%}
+
+:root{
+  --bg:#EEF2F1; --surface:#FFFFFF; --surface-2:#F5F8F7; --ink:#16252A; --muted:#566A70; --line:#D3DCDB; --grid:#E3E9E8;
+  --accent:#0E6B66; --accent-ink:#FFFFFF; --accent-soft:#D5EBE8;
+  --mark:#F2C23E; --mark-ink:#3A2D00; --mark-soft:#FBEFC8;
+  --good:#2F7D4E; --good-soft:#DCEFE3; --bad:#B4432E; --bad-soft:#F6DFD9;
+  --passed:#B7C4C2;
+  --display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body:"Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F181A; --surface:#162226; --surface-2:#1B2A2E; --ink:#E4ECEB; --muted:#95A7AA; --line:#2B3C40; --grid:#213135;
+    --accent:#4DB6AE; --accent-ink:#06201E; --accent-soft:#18393A;
+    --mark:#E9BD3F; --mark-ink:#241B00; --mark-soft:#3A3217;
+    --good:#62C189; --good-soft:#193426; --bad:#E7826A; --bad-soft:#3C2420;
+    --passed:#3F5357;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F181A; --surface:#162226; --surface-2:#1B2A2E; --ink:#E4ECEB; --muted:#95A7AA; --line:#2B3C40; --grid:#213135;
+  --accent:#4DB6AE; --accent-ink:#06201E; --accent-soft:#18393A;
+  --mark:#E9BD3F; --mark-ink:#241B00; --mark-soft:#3A3217;
+  --good:#62C189; --good-soft:#193426; --bad:#E7826A; --bad-soft:#3C2420;
+  --passed:#3F5357;
+}
+[hidden]{display:none!important}
+html{font-size:15px}
+html.big{font-size:21px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;padding-inline:16px;padding-block:18px 48px}
+.app{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.kicker{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.top h1{font-size:2.2rem;font-weight:700;letter-spacing:-.01em}
+.top-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);background:var(--surface)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--passed)}
+.pill.live .dot{background:var(--good)}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:.82rem;color:var(--muted)}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px 9px;font-weight:600;color:var(--muted);white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab .n{font-family:var(--mono);font-size:.75rem;border:1px solid currentColor;border-radius:50%;width:1.5em;height:1.5em;display:inline-grid;place-items:center}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .lock{font-size:.72rem;font-weight:500;color:var(--muted)}
+
+.lede{max-width:68ch;color:var(--ink)}
+.lede b{font-weight:700}
+.note{font-size:.88rem;color:var(--muted);max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* game */
+.game{display:grid;grid-template-columns:minmax(230px,300px) 1fr;gap:18px;align-items:start}
+@media (max-width:720px){.game{grid-template-columns:1fr}}
+.card{border:2px solid var(--ink);border-radius:12px;padding:16px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
+.card .who{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.card .score{font-family:var(--mono);font-size:3.4rem;font-weight:600;line-height:1;letter-spacing:-.02em}
+.card .score small{font-size:.9rem;color:var(--muted);font-weight:400;letter-spacing:0;margin-left:4px}
+.tag{align-self:flex-start;font-weight:700;font-size:.9rem;padding:4px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--line)}
+.tag.best{background:var(--mark);color:var(--mark-ink);border-color:var(--mark)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border-radius:8px;padding:11px 14px;font-weight:700;border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:not(:disabled):hover{filter:brightness(1.06)}
+.hint{font-size:.82rem;color:var(--muted);min-height:1.2em}
+
+.strip-wrap{display:flex;flex-direction:column;gap:6px}
+.strip{display:flex;gap:3px;align-items:flex-end;height:150px;border-bottom:1px solid var(--line);padding-top:22px}
+.slot{flex:1;min-width:0;position:relative;height:100%;display:flex;align-items:flex-end}
+.slot .bar{width:100%;border-radius:3px 3px 0 0;background:var(--passed);transition:height .25s ease}
+.slot.unseen .bar{height:100%!important;background:transparent;border:1px dashed var(--line);border-bottom:0}
+.slot.current .bar{background:var(--accent)}
+.slot.hired .bar{background:var(--accent)}
+.slot.best .bar{background:var(--mark)}
+.slot.look{background:var(--surface-2)}
+.slot .lab{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:.66rem;font-weight:700;white-space:nowrap;color:var(--ink)}
+.strip-axis{display:flex;gap:3px;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.strip-axis span{flex:1;text-align:center;min-width:0;overflow:hidden}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.result{border-radius:8px;padding:12px 14px;font-weight:600;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.result.win{background:var(--good-soft);color:var(--good)}
+.result.lose{background:var(--bad-soft);color:var(--bad)}
+.result p{color:var(--ink);font-weight:500}
+.result strong{display:block;font-family:var(--display);font-size:1.15rem}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ok{color:var(--good);font-weight:700}.no{color:var(--bad);font-weight:700}
+.tbl-wrap{overflow-x:auto}
+
+.gate{background:var(--mark-soft);border:1px solid var(--mark);border-radius:8px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:.9rem}
+
+.send{display:flex;flex-direction:column;gap:12px;border-color:var(--accent)}
+input.text{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0;flex:1 1 200px;max-width:320px}
+.linkbtn{text-decoration:none;display:inline-block;text-align:center}
+.linkbtn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+/* rule tab */
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.controls{grid-template-columns:1fr}}
+label.lbl{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:7px 12px;font-weight:600;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rule-sentence{font-size:1.05rem;max-width:62ch}
+.rule-sentence b{font-family:var(--mono);background:var(--accent-soft);padding:0 5px;border-radius:4px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}
+.check input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px}
+.readout{font-size:1rem}
+.readout .big{font-family:var(--mono);font-size:1.6rem;font-weight:600}
+.callout{border-left:4px solid var(--mark);padding:8px 14px;background:var(--surface-2);border-radius:0 8px 8px 0;max-width:72ch}
+
+.chart{width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);fill:var(--muted);font-size:12px}
+.chart .axis-title{fill:var(--ink);font-weight:600;font-size:12.5px}
+
+/* class tab */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.stat .k{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.stat .v{font-family:var(--mono);font-size:1.9rem;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .s{font-size:.8rem;color:var(--muted)}
+.admin{border:1px dashed var(--muted);border-radius:var(--radius);padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:.88rem}
+.admin .row{gap:8px}
+.muted{color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="kicker">Stopping rules · Decision lab</div>
+      <h1>The Hiring Game</h1>
+    </div>
+    <div class="top-right">
+      <button class="ghost" id="bigBtn" type="button">Big screen</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-play" aria-selected="true" data-tab="play"><span class="n">1</span>Play by gut</button>
+    <button class="tab" role="tab" id="t-rule" aria-selected="false" data-tab="rule"><span class="n">2</span>Test a rule <span class="lock" id="ruleLock">· after 3 rounds</span></button>
+  </nav>
+
+  <!-- PLAY -->
+  <section id="tab-play" class="stack">
+    <p class="lede">You are hiring a <b>program director</b>. Twenty candidates interview one at a time, in random order. After each interview you must <b>hire</b> or <b>pass</b>. Anyone you pass takes another job. You win only if you hire <b>the single best candidate</b>.</p>
+    <p class="note">Interview scores use a new, unknown scale every round (one round might run 40 to 300, the next 610 to 1,450). So a score only tells you how this candidate compares with the people you have already met.</p>
+
+    <div class="gate" id="gate" hidden>
+      <span id="gateText">Play at least 3 rounds before you test a rule.</span>
+      <button class="ghost" id="gateAnyway" type="button">Open it anyway</button>
+    </div>
+
+    <div class="panel game">
+      <div class="card" id="card">
+        <div class="who" id="who">Candidate 1 of 20</div>
+        <div class="score" id="score">—</div>
+        <div class="tag" id="tag">Best so far</div>
+        <div class="btns">
+          <button class="btn" id="passBtn" type="button">Pass</button>
+          <button class="btn primary" id="hireBtn" type="button">Hire</button>
+        </div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <div class="strip-wrap">
+        <div class="strip" id="strip" aria-label="Candidates so far"></div>
+        <div class="strip-axis" id="stripAxis"></div>
+        <div class="legend">
+          <span><i style="background:var(--passed)"></i>Passed</span>
+          <span><i style="background:var(--accent)"></i>Current / hired</span>
+          <span><i style="background:var(--mark)"></i>Best of all 20 (shown at the end)</span>
+        </div>
+        <p class="note">Bar heights compare the candidates you have seen so far with each other.</p>
+      </div>
+    </div>
+
+    <div id="resultBox"></div>
+
+    <div class="panel send" id="sendPanel" hidden>
+      <div class="stack" style="gap:6px">
+        <h3>Send your rounds to the class chart</h3>
+        <p class="note">Opens a short Google Form with your results already filled in. Press <b>Submit</b> there, then come back here. You can send again later; your latest send replaces the earlier one.</p>
+      </div>
+      <div class="row">
+        <input id="nameInput" class="text" type="text" autocomplete="name" placeholder="Your name" maxlength="40" aria-label="Your name">
+        <a class="btn primary linkbtn" id="sendLink" href="#" target="_blank" rel="noopener">Send to class chart</a>
+      </div>
+      <p class="hint" id="sendHint"></p>
+    </div>
+
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between">
+        <h3>Your rounds</h3>
+        <span class="muted" id="mySummary">No rounds yet</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Round</th><th class="num">Hired candidate #</th><th class="num">True rank of hire</th><th>Result</th></tr></thead>
+          <tbody id="myRounds"><tr><td colspan="4" class="muted">Your results will appear here.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULE -->
+  <section id="tab-rule" class="stack" hidden>
+    <p class="lede">Now try a <b>look-then-leap</b> rule. Interview a fixed number of candidates without hiring anyone. Then hire the first candidate who beats everyone you have seen. Which number gives you the best odds?</p>
+
+    <div class="panel stack">
+      <div class="controls">
+        <div>
+          <label class="lbl">Number of candidates</label>
+          <div class="seg" id="nSeg">
+            <button type="button" data-n="10" aria-pressed="false">10</button>
+            <button type="button" data-n="20" aria-pressed="true">20</button>
+            <button type="button" data-n="50" aria-pressed="false">50</button>
+            <button type="button" data-n="100" aria-pressed="false">100</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">What counts as winning</label>
+          <div class="seg" id="goalSeg">
+            <button type="button" data-goal="best" aria-pressed="true">Only the best counts</button>
+            <button type="button" data-goal="quality" aria-pressed="false">Quality of hire</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="lbl" for="kRange">Look phase</label>
+        <input type="range" id="kRange" min="0" max="19" value="3">
+        <p class="rule-sentence" id="ruleSentence"></p>
+      </div>
+      <label class="check"><input type="checkbox" id="recallChk"><span><b>Allow a callback.</b> If nobody beats your benchmark, you may call back the best candidate you passed. They accept half the time. Otherwise you must take the last candidate.</span></label>
+      <div class="row">
+        <button class="btn" id="oneBtn" type="button">Run one hiring</button>
+        <button class="btn primary" id="simBtn" type="button">Simulate 1,000 hirings</button>
+        <button class="btn" id="curveBtn" type="button">Show every look phase</button>
+      </div>
+      <div id="oneBox" class="strip-wrap" hidden>
+        <div class="strip" id="oneStrip"></div>
+        <p class="note" id="oneText"></p>
+      </div>
+      <div class="readout" id="simReadout"><span class="muted">Pick a look phase and simulate 1,000 hirings. Each result is added to the chart.</span></div>
+    </div>
+
+    <div class="panel stack">
+      <h3 id="chartTitle">How often does each rule hire the best candidate?</h3>
+      <div class="chart" id="ruleChart"></div>
+      <div class="legend" id="ruleLegend"></div>
+      <div class="callout" id="curveCallout" hidden></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const N_PLAY=20, GATE=3;
+const rnd=Math.random;
+const randInt=(a,b)=>a+Math.floor(rnd()*(b-a+1));
+const ord=n=>{const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+const pct=x=>Math.round(x*100)+"%";
+const fmt=n=>n.toLocaleString("en-US");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- send to class (Google Form) ---------- */
+const FORM_PREFILL="https://docs.google.com/forms/d/e/1FAIpQLSc9XtTTaLGkM-JiS6KcXVJb2SXef8VJWQ1DdJwl1RAkdo7KUQ/viewform?usp=pp_url&entry.538391195=NAME&entry.1360423735=GAME&entry.410793359=RESULT&entry.2030132914=CODE";
+let pid=null;
+try{ pid=localStorage.getItem("hg-pid"); }catch(e){}
+if(!pid){ pid="p"+Math.random().toString(36).slice(2,10); try{localStorage.setItem("hg-pid",pid);}catch(e){} }
+try{ const nm=localStorage.getItem("dl-name"); if(nm) $("nameInput").value=nm; }catch(e){}
+const enc=v=>encodeURIComponent(v).replace(/[!'()*~]/g,c=>"%"+c.charCodeAt(0).toString(16).toUpperCase());
+function fill(url,key,val){ return url.replace(new RegExp("(entry\\.\\d+)="+key+"(?=&|$)"), (m,e)=>e+"="+encodeURIComponent(val)); }
+function updateSend(){
+  const ok=FORM_PREFILL.indexOf("docs.google.com")>=0;
+  $("sendPanel").hidden = !ok || myRounds.length===0;
+  if(!ok) return;
+  const name=$("nameInput").value.trim();
+  const link=$("sendLink");
+  if(!name){ link.setAttribute("aria-disabled","true"); link.href="#"; $("sendHint").textContent="Type your name first."; return; }
+  const code="HG1;n="+enc(name)+";id="+pid+";t="+Date.now().toString(36)+";r="+myRounds.map(r=>r.stop+"."+r.rank+"."+(r.phase==="gut"?"g":"a")).join("_");
+  const wins=myRounds.filter(r=>r.won).length;
+  const summary="Won "+wins+" of "+myRounds.length+" rounds. Hired candidates: "+myRounds.map(r=>"#"+r.stop).join(", ");
+  let url=FORM_PREFILL; url=fill(url,"NAME",name); url=fill(url,"GAME","Hiring"); url=fill(url,"RESULT",summary); url=fill(url,"CODE",code);
+  link.href=url; link.removeAttribute("aria-disabled");
+  $("sendHint").textContent="Sends "+myRounds.length+" round"+(myRounds.length>1?"s":"")+".";
+}
+$("nameInput").addEventListener("input",()=>{ try{localStorage.setItem("dl-name",$("nameInput").value.trim());}catch(e){} updateSend(); });
+$("sendLink").addEventListener("click",e=>{ if($("sendLink").getAttribute("aria-disabled")==="true"){ e.preventDefault(); $("nameInput").focus(); } else { $("sendHint").textContent="Form opened in a new tab. Press Submit there."; } });
+
+/* ---------- tabs ---------- */
+let visitedRule=false, currentTab="play";
+function showTab(name){
+  currentTab=name;
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===name ? "true":"false"));
+  ["play","rule"].forEach(n=>$("tab-"+n).hidden = n!==name);
+  if(name==="rule"){ visitedRule=true; updateGate(); if(!ruleState.drawn){ drawRuleChart(); ruleState.drawn=true; } else drawRuleChart(); }
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.tab==="rule" && !visitedRule && myRounds.length<GATE){
+    showTab("play"); $("gate").hidden=false; $("gate").scrollIntoView({behavior:"smooth",block:"center"}); return;
+  }
+  showTab(b.dataset.tab);
+}));
+$("gateAnyway").addEventListener("click",()=>{ $("gate").hidden=true; showTab("rule"); });
+function updateGate(){
+  const left=Math.max(0,GATE-myRounds.length);
+  $("ruleLock").textContent = visitedRule ? "" : left>0 ? "· after "+left+" more round"+(left>1?"s":"") : "· unlocked";
+  $("gateText").textContent = left>0 ? "Play "+left+" more round"+(left>1?"s":"")+" by gut before you test a rule." : "Unlocked.";
+  if(left===0) $("gate").hidden=true;
+}
+
+$("bigBtn").addEventListener("click",()=>{
+  const on=document.documentElement.classList.toggle("big");
+  $("bigBtn").textContent = on ? "Normal size" : "Big screen";
+  redrawCharts();
+});
+
+/* ---------- play ---------- */
+let game=null; const myRounds=[];
+function newGame(){
+  let q, scores;
+  do{
+    q=Array.from({length:N_PLAY},()=>rnd());
+    const base=randInt(0,700), span=randInt(180,1100);
+    scores=q.map(v=>Math.round(base+v*span));
+  }while(new Set(scores).size<N_PLAY);
+  game={q,scores,idx:0,over:false,hired:-1};
+  $("resultBox").innerHTML="";
+  renderGame();
+}
+function rankAmongSeen(i){ let r=1; for(let j=0;j<i;j++) if(game.scores[j]>game.scores[i]) r++; return r; }
+function trueRank(i){ let r=1; for(let j=0;j<N_PLAY;j++) if(game.scores[j]>game.scores[i]) r++; return r; }
+function renderGame(){
+  const g=game, i=g.idx;
+  $("who").textContent = g.over ? "Round over" : "Candidate "+(i+1)+" of "+N_PLAY;
+  $("score").innerHTML = g.over ? fmt(g.scores[g.hired])+"<small>hired</small>" : fmt(g.scores[i])+"<small>points</small>";
+  const r = g.over ? null : rankAmongSeen(i);
+  const tag=$("tag");
+  if(g.over){ tag.className="tag"; tag.textContent="You hired candidate "+(g.hired+1); }
+  else if(r===1){ tag.className="tag best"; tag.textContent = i===0 ? "Best so far (first one)" : "Best so far"; }
+  else { tag.className="tag"; tag.textContent = ord(r)+" best of "+(i+1)+" so far"; }
+  $("passBtn").disabled = g.over || i===N_PLAY-1;
+  $("hireBtn").disabled = g.over;
+  $("hint").textContent = g.over ? "" : i===N_PLAY-1 ? "Last candidate: you must hire." : "";
+  // strip
+  const seen=g.over?N_PLAY:i+1;
+  const vis=g.scores.slice(0,seen);
+  const lo=Math.min(...vis), hi=Math.max(...vis);
+  const best = g.over ? g.scores.indexOf(Math.max(...g.scores)) : -1;
+  let html="", ax="";
+  for(let j=0;j<N_PLAY;j++){
+    let cls="slot", h=0, lab="";
+    if(j>=seen) cls+=" unseen";
+    else{
+      h = hi===lo ? 70 : 18+82*(g.scores[j]-lo)/(hi-lo);
+      if(!g.over && j===i) cls+=" current";
+      if(g.over && j===g.hired) { cls+=" hired"; lab="Hired"; }
+      if(g.over && j===best) { cls+=" best"; lab = j===g.hired ? "Hired · best" : "Best"; }
+    }
+    html+=`<div class="${cls}" title="Candidate ${j+1}${j<seen?": "+g.scores[j]:""}"><div class="bar" style="height:${h}%"></div>${lab?`<span class="lab">${lab}</span>`:""}</div>`;
+    ax+=`<span>${j+1}</span>`;
+  }
+  $("strip").innerHTML=html; $("stripAxis").innerHTML=ax;
+}
+$("passBtn").addEventListener("click",()=>{ if(game.over||game.idx>=N_PLAY-1) return; game.idx++; renderGame(); });
+$("hireBtn").addEventListener("click",()=>{
+  if(game.over) return;
+  const g=game; g.over=true; g.hired=g.idx;
+  const rank=trueRank(g.hired), won=rank===1;
+  const bestIdx=g.scores.indexOf(Math.max(...g.scores));
+  const rec={round:myRounds.length+1, stop:g.hired+1, n:N_PLAY, rank, won, phase: visitedRule?"after":"gut", t:Date.now()};
+  myRounds.push(rec); updateSend();
+  renderGame(); renderMine(); updateGate();
+  const msg = won ? `<strong>You hired the best candidate.</strong><p>Candidate ${g.hired+1} was the strongest of all ${N_PLAY}.</p>`
+    : `<strong>You hired the ${ord(rank)} best of ${N_PLAY}.</strong><p>The best was candidate ${bestIdx+1}${bestIdx<g.hired?", whom you had already passed":", who had not interviewed yet"}.</p>`;
+  $("resultBox").innerHTML=`<div class="result ${won?"win":"lose"}"><div>${msg}</div><button class="btn primary" id="nextBtn" type="button">Next round</button></div>`;
+  $("nextBtn").addEventListener("click",newGame);
+  $("nextBtn").focus();
+});
+function renderMine(){
+  if(!myRounds.length) return;
+  $("myRounds").innerHTML = myRounds.slice().reverse().map(r=>`<tr><td>${r.round}${r.phase==="after"?' <span class="muted">(after rule)</span>':""}</td><td class="num">${r.stop}</td><td class="num">${ord(r.rank)}</td><td class="${r.won?"ok":"no"}">${r.won?"Hired the best":"Missed"}</td></tr>`).join("");
+  const wins=myRounds.filter(r=>r.won).length;
+  const avg=myRounds.reduce((a,r)=>a+r.stop,0)/myRounds.length;
+  $("mySummary").textContent = `Won ${wins} of ${myRounds.length} · average hire: candidate ${avg.toFixed(1)}`;
+}
+
+/* ---------- simulation ---------- */
+function simOnce(N,k,recall){
+  const q=Array.from({length:N},()=>rnd());
+  let bench=-1; for(let i=0;i<k;i++) if(q[i]>bench) bench=q[i];
+  let hired=-1, called=false;
+  for(let i=k;i<N;i++){ if(q[i]>bench){ hired=i; break; } }
+  if(hired<0){
+    if(recall && k>0 && rnd()<0.5){ hired=q.indexOf(bench); called=true; }
+    else hired=N-1;
+  }
+  let rank=1; for(let j=0;j<N;j++) if(q[j]>q[hired]) rank++;
+  return {q,bench,hired,rank,called,noneBeat: hired===N-1 && !(q[N-1]>bench) || called};
+}
+function simMany(N,k,trials,recall){
+  let wins=0, pctSum=0;
+  for(let t=0;t<trials;t++){ const r=simOnce(N,k,recall); if(r.rank===1) wins++; pctSum += N>1 ? (N-r.rank)/(N-1) : 1; }
+  return {win:wins/trials, quality:pctSum/trials, wins};
+}
+function exactBest(N,k,recall){
+  let p; if(k===0) p=1/N; else { let s=0; for(let i=k+1;i<=N;i++) s+=1/(i-1); p=k/N*s; }
+  if(recall && k>0) p += 0.5*k/N;
+  return p;
+}
+
+/* ---------- rule tab ---------- */
+const ruleState={N:20,k:3,goal:"best",recall:false,points:[],curve:null,drawn:false};
+function setSeg(segId,attr,val){ $(segId).querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset[attr]===String(val)?"true":"false")); }
+function resetRule(){ ruleState.points=[]; ruleState.curve=null; $("curveCallout").hidden=true; $("oneBox").hidden=true;
+  $("simReadout").innerHTML='<span class="muted">Pick a look phase and simulate 1,000 hirings. Each result is added to the chart.</span>'; drawRuleChart(); }
+function updateSentence(){
+  const {N,k}=ruleState;
+  $("kRange").max=N-1; $("kRange").value=k;
+  $("ruleSentence").innerHTML = k===0
+    ? `Look at <b>0</b> candidates: hire the very first one you meet.`
+    : `Look at the first <b>${k}</b> of ${N} candidates (<b>${Math.round(k/N*100)}%</b>) without hiring. Then hire the first one who beats all of them.`;
+  $("chartTitle").textContent = ruleState.goal==="best" ? "How often does each rule hire the best candidate?" : "How good is the average hire under each rule?";
+}
+$("nSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  const N=+b.dataset.n; ruleState.N=N; ruleState.k=Math.max(1,Math.round(N*0.15)); setSeg("nSeg","n",N); updateSentence(); resetRule(); });
+$("goalSeg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return;
+  ruleState.goal=b.dataset.goal; setSeg("goalSeg","goal",ruleState.goal); updateSentence(); resetRule(); });
+$("recallChk").addEventListener("change",e=>{ ruleState.recall=e.target.checked; resetRule(); });
+$("kRange").addEventListener("input",e=>{ ruleState.k=+e.target.value; updateSentence(); });
+
+$("oneBtn").addEventListener("click",()=>{
+  const {N,k,recall}=ruleState; const r=simOnce(N,k,recall);
+  const lo=Math.min(...r.q), hi=Math.max(...r.q), best=r.q.indexOf(hi);
+  let html="";
+  for(let j=0;j<N;j++){
+    let cls="slot"+(j<k?" look":""), lab="";
+    if(j===r.hired){cls+=" hired"; lab = N<=20 ? "Hired" : "▲";}
+    if(j===best){cls+=" best"; lab = N<=20 ? (j===r.hired?"Hired · best":"Best") : (j===r.hired?"▲":"★");}
+    const h=18+82*(r.q[j]-lo)/(hi-lo);
+    html+=`<div class="${cls}"><div class="bar" style="height:${h}%"></div>${lab?`<span class="lab">${lab}</span>`:""}</div>`;
+  }
+  $("oneStrip").innerHTML=html; $("oneBox").hidden=false;
+  const bi=r.q.indexOf(r.bench);
+  let txt = k===0 ? `You hired candidate 1, who turned out to be the ${ord(r.rank)} best.`
+    : `The best of the first ${k} was candidate ${bi+1}. `;
+  if(k>0){
+    if(r.called) txt+=`Nobody beat them, so you called them back and they accepted. `;
+    else if(r.hired===N-1 && !(r.q[N-1]>r.bench)) txt+=`Nobody beat them${recall?" and the callback was declined":""}, so you had to take the last candidate. `;
+    else txt+=`Candidate ${r.hired+1} was the first to beat them. `;
+    txt+=`Your hire was the ${ord(r.rank)} best of ${N}.`;
+  }
+  $("oneText").innerHTML = `<b class="${r.rank===1?"ok":"no"}">${r.rank===1?"Hired the best.":"Missed."}</b> ${esc(txt)} The shaded area is the look phase.`;
+});
+$("simBtn").addEventListener("click",()=>{
+  const {N,k,recall,goal}=ruleState; const r=simMany(N,k,1000,recall);
+  const y = goal==="best" ? r.win : r.quality;
+  ruleState.points = ruleState.points.filter(p=>p.k!==k).concat([{k,y}]);
+  $("simReadout").innerHTML = goal==="best"
+    ? `Looking at ${k}: hired the best in <span class="big">${fmt(r.wins)}</span> of 1,000 hirings (${pct(r.win)}).`
+    : `Looking at ${k}: the average hire was better than <span class="big">${pct(r.quality)}</span> of the candidates.`;
+  drawRuleChart();
+});
+$("curveBtn").addEventListener("click",()=>{
+  const {N,recall,goal}=ruleState; const ys=[];
+  const trials = N<=20?4000:N<=50?1500:700;
+  for(let k=0;k<N;k++) ys.push(goal==="best" ? exactBest(N,k,recall) : simMany(N,k,trials,recall).quality);
+  ruleState.curve=ys;
+  let bk=0; ys.forEach((v,k)=>{ if(v>ys[bk]) bk=k; });
+  const c=$("curveCallout"); c.hidden=false;
+  c.innerHTML = goal==="best"
+    ? `<b>Best rule here:</b> look at the first ${bk} of ${N} (${Math.round(bk/N*100)}%), then leap. It hires the best candidate ${pct(ys[bk])} of the time${ys[bk]<0.5?`, so even the best rule misses ${pct(1-ys[bk])} of the time`:""}.${recall?" Allowing a callback makes it safer to look longer.":" Notice how flat the curve is near the top: being roughly right matters more than being exact."}`
+    : `<b>Best rule here:</b> look at only ${bk} of ${N} (${Math.round(bk/N*100)}%). When a very good hire is fine, you should stop searching much sooner than 37%.`;
+  drawRuleChart();
+});
+
+/* ---------- charts ---------- */
+function chartFrame(el,opt){
+  const W=Math.max(300, Math.round(el.clientWidth||600));
+  const big=document.documentElement.classList.contains("big");
+  const H=Math.round(Math.min(360, Math.max(230, W*0.5))*(big?1.15:1));
+  const m={l:56,r:18,t:18,b:48};
+  const sx=v=>m.l+(v-opt.x[0])/(opt.x[1]-opt.x[0])*(W-m.l-m.r);
+  const sy=v=>H-m.b-(v-opt.y[0])/(opt.y[1]-opt.y[0])*(H-m.t-m.b);
+  let g="";
+  (opt.yTicks||[]).forEach(t=>{ g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${sy(t.v)}" y2="${sy(t.v)}" style="stroke:var(--grid)"/><text x="${m.l-8}" y="${sy(t.v)+4}" text-anchor="end">${t.label}</text>`; });
+  (opt.xTicks||[]).forEach(t=>{ g+=`<text x="${sx(t.v)}" y="${H-m.b+18}" text-anchor="middle">${t.label}</text>`; });
+  g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" style="stroke:var(--muted)"/>`;
+  if(opt.xLabel) g+=`<text class="axis-title" x="${(m.l+W-m.r)/2}" y="${H-8}" text-anchor="middle">${opt.xLabel}</text>`;
+  if(opt.yLabel) g+=`<text class="axis-title" transform="translate(14 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">${opt.yLabel}</text>`;
+  g+=opt.draw({sx,sy,W,H,m});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opt.aria||"")}">${g}</svg>`;
+}
+function myGutShare(){
+  const gut=myRounds.filter(r=>r.phase==="gut"); if(!gut.length) return null;
+  return gut.reduce((a,r)=>a+(r.stop-1)/r.n,0)/gut.length*100;
+}
+function drawRuleChart(){
+  const el=$("ruleChart"); if($("tab-rule").hidden) return;
+  const {N,points,curve,goal}=ruleState;
+  const yTicks=[0,.2,.4,.6,.8,1].map(v=>({v,label:Math.round(v*100)+"%"}));
+  const xTicks=[0,20,40,60,80,100].map(v=>({v,label:v+"%"}));
+  const mine=myGutShare(), cls=null;
+  chartFrame(el,{x:[0,100],y:[0,1],xTicks,yTicks,
+    xLabel:"Share of candidates in the look phase",
+    yLabel: goal==="best" ? "Hired the best" : "Average hire beats this share",
+    aria:"Chart of rule performance by look-phase length",
+    draw:({sx,sy,m,H})=>{
+      let s="";
+      const ref=(x,label,col,dy)=>{ if(x==null) return ""; return `<line x1="${sx(x)}" x2="${sx(x)}" y1="${m.t}" y2="${H-m.b}" style="stroke:${col};stroke-width:2;stroke-dasharray:5 4"/><text x="${sx(x)+5}" y="${m.t+12+dy}" style="fill:${col};font-weight:600">${label}</text>`; };
+      s+=ref(mine,"Your gut","var(--ink)",0);
+      s+=ref(cls,"Class gut (median)","var(--muted)",16);
+      if(curve){
+        const pts=curve.map((v,k)=>`${sx(k/N*100).toFixed(1)},${sy(v).toFixed(1)}`).join(" ");
+        const area=`M${sx(0)},${sy(0)} L`+pts.split(" ").join(" L")+` L${sx((N-1)/N*100)},${sy(0)} Z`;
+        s+=`<path d="${area}" style="fill:var(--accent);opacity:.1"/>`;
+        s+=`<polyline points="${pts}" style="fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round"/>`;
+        let bk=0; curve.forEach((v,k)=>{ if(v>curve[bk]) bk=k; });
+        s+=`<circle cx="${sx(bk/N*100)}" cy="${sy(curve[bk])}" r="6" style="fill:var(--mark);stroke:var(--ink);stroke-width:1.5"/>`;
+        s+=`<text x="${sx(bk/N*100)}" y="${sy(curve[bk])-12}" text-anchor="middle" style="fill:var(--ink);font-weight:700">Best: ${bk} of ${N} → ${pct(curve[bk])}</text>`;
+      }
+      points.forEach(p=>{ s+=`<circle cx="${sx(p.k/N*100)}" cy="${sy(p.y)}" r="5.5" style="fill:var(--surface);stroke:var(--accent);stroke-width:2.5"><title>Look at ${p.k}: ${pct(p.y)}</title></circle>`; });
+      return s;
+    }});
+  $("ruleLegend").innerHTML = `<span><i style="background:var(--surface);border:2px solid var(--accent)"></i>Your 1,000-hiring tests</span>${curve?'<span><i style="background:var(--accent)"></i>Every look phase ('+(goal==="best"?"exact":"simulated")+')</span>':""}${mine!=null?'<span><i style="background:var(--ink)"></i>Your gut: how far you got before hiring</span>':""}`;
+}
+
+function redrawCharts(){ if(currentTab==="rule") drawRuleChart(); }
+let rt=null; window.addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(redrawCharts,150); });
+
+updateSentence(); updateGate(); newGame(); updateSend();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The Pilot Program Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+img{max-width:100%}
+
+:root{
+  --bg:#EEF2F1; --surface:#FFFFFF; --surface-2:#F5F8F7; --ink:#16252A; --muted:#566A70; --line:#D3DCDB; --grid:#E3E9E8;
+  --accent:#0E6B66; --accent-ink:#FFFFFF; --accent-soft:#D5EBE8;
+  --mark:#F2C23E; --mark-ink:#3A2D00; --mark-soft:#FBEFC8;
+  --good:#2F7D4E; --good-soft:#DCEFE3; --bad:#B4432E; --bad-soft:#F6DFD9;
+  --passed:#B7C4C2;
+  --display:"Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body:"Public Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F181A; --surface:#162226; --surface-2:#1B2A2E; --ink:#E4ECEB; --muted:#95A7AA; --line:#2B3C40; --grid:#213135;
+    --accent:#4DB6AE; --accent-ink:#06201E; --accent-soft:#18393A;
+    --mark:#E9BD3F; --mark-ink:#241B00; --mark-soft:#3A3217;
+    --good:#62C189; --good-soft:#193426; --bad:#E7826A; --bad-soft:#3C2420;
+    --passed:#3F5357;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F181A; --surface:#162226; --surface-2:#1B2A2E; --ink:#E4ECEB; --muted:#95A7AA; --line:#2B3C40; --grid:#213135;
+  --accent:#4DB6AE; --accent-ink:#06201E; --accent-soft:#18393A;
+  --mark:#E9BD3F; --mark-ink:#241B00; --mark-soft:#3A3217;
+  --good:#62C189; --good-soft:#193426; --bad:#E7826A; --bad-soft:#3C2420;
+  --passed:#3F5357;
+}
+[hidden]{display:none!important}
+html{font-size:15px}
+html.big{font-size:21px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;padding-inline:16px;padding-block:18px 48px}
+.app{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.kicker{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.top h1{font-size:2.2rem;font-weight:700;letter-spacing:-.01em}
+.top-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted);background:var(--surface)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--passed)}
+.pill.live .dot{background:var(--good)}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:.82rem;color:var(--muted)}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px 9px;font-weight:600;color:var(--muted);white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab .n{font-family:var(--mono);font-size:.75rem;border:1px solid currentColor;border-radius:50%;width:1.5em;height:1.5em;display:inline-grid;place-items:center}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .lock{font-size:.72rem;font-weight:500;color:var(--muted)}
+
+.lede{max-width:68ch;color:var(--ink)}
+.lede b{font-weight:700}
+.note{font-size:.88rem;color:var(--muted);max-width:70ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border-radius:8px;padding:11px 14px;font-weight:700;border:1px solid var(--line);background:var(--surface)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:not(:disabled):hover{filter:brightness(1.06)}
+.result{border-radius:8px;padding:12px 14px;font-weight:600;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.result.win{background:var(--good-soft);color:var(--good)}
+.result.lose{background:var(--bad-soft);color:var(--bad)}
+.result p{color:var(--ink);font-weight:500}
+.result strong{display:block;font-family:var(--display);font-size:1.15rem}
+
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ok{color:var(--good);font-weight:700}.no{color:var(--bad);font-weight:700}
+.tbl-wrap{overflow-x:auto}
+
+.gate{background:var(--mark-soft);border:1px solid var(--mark);border-radius:8px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:.9rem}
+
+/* rule tab */
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.controls{grid-template-columns:1fr}}
+label.lbl{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block;margin-bottom:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);padding:7px 12px;font-weight:600;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rule-sentence{font-size:1.05rem;max-width:62ch}
+.rule-sentence b{font-family:var(--mono);background:var(--accent-soft);padding:0 5px;border-radius:4px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.92rem}
+.check input{margin-top:4px;accent-color:var(--accent);width:18px;height:18px}
+.readout{font-size:1rem}
+.readout .big{font-family:var(--mono);font-size:1.6rem;font-weight:600}
+.callout{border-left:4px solid var(--mark);padding:8px 14px;background:var(--surface-2);border-radius:0 8px 8px 0;max-width:72ch}
+
+.chart{width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);fill:var(--muted);font-size:12px}
+.chart .axis-title{fill:var(--ink);font-weight:600;font-size:12.5px}
+
+/* class tab */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px}
+.stat .k{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.stat .v{font-family:var(--mono);font-size:1.9rem;font-weight:600;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat .s{font-size:.8rem;color:var(--muted)}
+.admin{border:1px dashed var(--muted);border-radius:var(--radius);padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:.88rem}
+.admin .row{gap:8px}
+.muted{color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.8rem;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+.send{display:flex;flex-direction:column;gap:12px;border-color:var(--accent)}
+input.text{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0;flex:1 1 200px;max-width:320px}
+.linkbtn{text-decoration:none;display:inline-block;text-align:center}
+.linkbtn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+.hint{font-size:.82rem;color:var(--muted);min-height:1.2em}
+/* pilot game */
+:root{ --s1:#B8573F; --s2:#B7841A; --s3:#6D5BA8; --s4:#0E6B66; --you:#16252A; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --s1:#E58B72; --s2:#E0B24A; --s3:#A596E0; --s4:#4DB6AE; --you:#E4ECEB; } }
+:root[data-theme="dark"]{ --s1:#E58B72; --s2:#E0B24A; --s3:#A596E0; --s4:#4DB6AE; --you:#E4ECEB; }
+.status{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:baseline}
+.status .k{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;display:block}
+.status .v{font-family:var(--mono);font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums}
+.progs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:760px){.progs{grid-template-columns:repeat(2,1fr)}}
+.prog{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:14px;display:flex;flex-direction:column;gap:10px;transition:background .2s ease,border-color .2s ease}
+.prog.flash-win{background:var(--good-soft);border-color:var(--good)}
+.prog.flash-lose{background:var(--bad-soft);border-color:var(--bad)}
+.prog h3{font-size:1.05rem}
+.prog .letter{font-family:var(--mono);font-size:.75rem;color:var(--muted);font-weight:600;letter-spacing:.06em}
+.tally{font-family:var(--mono);font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums}
+.tally small{font-size:.8rem;color:var(--muted);font-weight:400}
+.meter{height:10px;border-radius:5px;background:var(--grid);position:relative;overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:5px;transition:width .25s ease}
+.meter b{position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--mark);border-radius:2px}
+.prog .obs{font-size:.82rem;color:var(--muted)}
+.prog .truth{font-size:.85rem;font-weight:700}
+.prog.is-best{border-color:var(--mark);border-width:2px}
+.log{display:flex;flex-wrap:wrap;gap:3px}
+.log span{width:20px;height:20px;border-radius:4px;display:grid;place-items:center;font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--surface)}
+.log .w{background:var(--good)}.log .l{background:var(--bad)}.log .e{background:transparent;border:1px dashed var(--line)}
+.bars{display:flex;flex-direction:column;gap:8px}
+.hbar{display:grid;grid-template-columns:minmax(120px,210px) 1fr auto;gap:10px;align-items:center;font-size:.9rem}
+.hbar .track{height:18px;background:var(--grid);border-radius:4px;position:relative}
+.hbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.hbar .val{font-family:var(--mono);font-variant-numeric:tabular-nums;min-width:4.5em;text-align:right}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+.botdesc{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (max-width:640px){.botdesc{grid-template-columns:1fr}}
+.botdesc div{font-size:.88rem;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.botdesc b{display:block;font-family:var(--display)}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="kicker">Explore vs. exploit · Decision lab</div>
+      <h1>The Pilot Program Game</h1>
+    </div>
+    <div class="top-right">
+      <button class="ghost" id="bigBtn" type="button">Big screen</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="play"><span class="n">1</span>Play</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="race"><span class="n">2</span>Strategy race <span class="lock" id="raceLock">· after 1 game</span></button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="horizon"><span class="n">3</span>How long to test?</button>
+  </nav>
+
+  <!-- PLAY -->
+  <section id="tab-play" class="stack">
+    <p class="lede">Your ministry has budget for <b>one pilot program per month</b> for <b>40 months</b>. Each month you fund one program and see whether it succeeded that month. Each program has a hidden success rate. Your goal: <b>as many successes as possible</b> over the 40 months.</p>
+    <p class="note">The hidden rates are reshuffled every game, so a program's name tells you nothing about how good it is.</p>
+    <div class="gate" id="gate" hidden>
+      <span>Finish one game before opening the strategy race.</span>
+      <button class="ghost" id="gateAnyway" type="button">Open it anyway</button>
+    </div>
+    <div class="panel stack">
+      <div class="status">
+        <div><span class="k">Month</span><span class="v" id="monthV">1 / 40</span></div>
+        <div><span class="k">Successes</span><span class="v" id="succV">0</span></div>
+        <div style="flex:1;min-width:200px"><span class="k">Recent months</span><div class="log" id="log"></div></div>
+      </div>
+      <div class="progs" id="progs"></div>
+    </div>
+    <div id="resultBox"></div>
+
+    <div class="panel send" id="sendPanel" hidden>
+      <div class="stack" style="gap:6px">
+        <h3>Send your games to the class chart</h3>
+        <p class="note">Opens a short Google Form with your results already filled in. Press <b>Submit</b> there, then come back here. You can send again after more games; your latest send replaces the earlier one.</p>
+      </div>
+      <div class="row">
+        <input id="nameInput" class="text" type="text" autocomplete="name" placeholder="Your name" maxlength="40" aria-label="Your name">
+        <a class="btn primary linkbtn" id="sendLink" href="#" target="_blank" rel="noopener">Send to class chart</a>
+      </div>
+      <p class="hint" id="sendHint"></p>
+    </div>
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><h3>Your games</h3><span class="muted" id="mySummary">No games yet</span></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Game</th><th class="num">Successes</th><th class="num">Best possible (avg)</th><th class="num">Regret</th><th class="num">Months on the true best</th></tr></thead>
+        <tbody id="myGames"><tr><td colspan="5" class="muted">Your results will appear here.</td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- RACE -->
+  <section id="tab-race" class="stack" hidden>
+    <p class="lede">Four automated strategies play the same four programs. Watch one race month by month, then run 1,000 races to see which strategy does best on average.</p>
+    <div class="botdesc">
+      <div><span class="sw" style="background:var(--s1)"></span><b style="display:inline">Always the leader</b><br>Tries each program once, then always funds whichever has the best record so far.</div>
+      <div><span class="sw" style="background:var(--s2)"></span><b style="display:inline">Leader, but explore 10%</b><br>Same, except one month in ten it funds a program at random.</div>
+      <div><span class="sw" style="background:var(--s3)"></span><b style="display:inline">Win-stay, lose-shift</b><br>Keeps funding a program after a success. Switches to another after a failure.</div>
+      <div><span class="sw" style="background:var(--s4)"></span><b style="display:inline">Optimism under uncertainty</b><br>Gives each program a bonus that shrinks the more it has been tried, then funds the highest record plus bonus (a UCB rule).</div>
+    </div>
+    <div class="panel stack">
+      <div class="controls">
+        <div>
+          <label class="lbl" for="hRange">Months in the program</label>
+          <input type="range" id="hRange" min="5" max="500" value="40">
+          <p><b class="mono" id="hVal">40</b> months</p>
+        </div>
+        <div>
+          <label class="lbl">World</label>
+          <label class="check"><input type="checkbox" id="driftChk"><span><b>Rates drift over time.</b> Each program's true success rate wanders a little every month, so today's best may not stay best.</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn" id="watchBtn" type="button">Watch one race</button>
+        <button class="btn primary" id="raceBtn" type="button">Run 1,000 races</button>
+      </div>
+      <div id="watchBox" class="stack" hidden>
+        <h3>One race: cumulative successes</h3>
+        <div class="chart" id="watchChart"></div>
+        <div class="legend" id="watchLegend"></div>
+      </div>
+      <div id="raceBox" class="stack" hidden>
+        <h3 id="raceTitle">Average successes lost compared with perfect knowledge</h3>
+        <div class="bars" id="raceBars"></div>
+        <p class="note" id="raceNote"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HORIZON -->
+  <section id="tab-horizon" class="stack" hidden>
+    <p class="lede">A simple plan: <b>test</b> each of the four programs the same number of times, then <b>commit</b> to the one with the best record for the rest of the time. How long should you test?</p>
+    <div class="panel stack">
+      <div>
+        <label class="lbl" for="h2Range">Months in the program</label>
+        <input type="range" id="h2Range" min="4" max="500" value="40">
+        <p><b class="mono" id="h2Val">40</b> months</p>
+      </div>
+      <div class="chart" id="horizonChart"></div>
+      <div class="callout" id="horizonCallout"></div>
+    </div>
+    <div class="panel stack">
+      <h3>The best testing period grows with the horizon</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th class="num">Months in program</th><th class="num">Best months of testing</th><th class="num">Share of time testing</th><th class="num">Success rate achieved</th></tr></thead>
+        <tbody id="horizonTable"><tr><td colspan="4" class="muted">Calculating…</td></tr></tbody>
+      </table></div>
+      <p class="note">True rates in this world: 30%, 45%, 55% and 65%. Perfect knowledge earns 65% every month; picking at random earns about 49%.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const H_PLAY=40, RATES=[0.30,0.45,0.55,0.65], BEST=0.65;
+const NAMES=["SMS reminders","Peer mentoring","Cash incentive","Home visits"];
+const rnd=Math.random;
+const pct=x=>Math.round(x*100)+"%";
+const fmt=n=>n.toLocaleString("en-US");
+const f1=x=>(Math.round(x*10)/10).toFixed(1);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const argmaxRand=arr=>{let m=-Infinity,ix=[];arr.forEach((v,i)=>{if(v>m+1e-12){m=v;ix=[i];}else if(Math.abs(v-m)<=1e-12)ix.push(i);});return ix[Math.floor(rnd()*ix.length)];};
+
+/* ---------- send to class (Google Form) ---------- */
+const FORM_PREFILL="https://docs.google.com/forms/d/e/1FAIpQLSc9XtTTaLGkM-JiS6KcXVJb2SXef8VJWQ1DdJwl1RAkdo7KUQ/viewform?usp=pp_url&entry.538391195=NAME&entry.1360423735=GAME&entry.410793359=RESULT&entry.2030132914=CODE";
+let pid=null;
+try{pid=localStorage.getItem("pg-pid");}catch(e){}
+if(!pid){pid="p"+Math.random().toString(36).slice(2,10);try{localStorage.setItem("pg-pid",pid);}catch(e){}}
+try{ const nm=localStorage.getItem("dl-name"); if(nm) $("nameInput").value=nm; }catch(e){}
+const enc=v=>encodeURIComponent(v).replace(/[!'()*~]/g,c=>"%"+c.charCodeAt(0).toString(16).toUpperCase());
+function fill(url,key,val){ return url.replace(new RegExp("(entry\\.\\d+)="+key+"(?=&|$)"),(m,e)=>e+"="+encodeURIComponent(val)); }
+function updateSend(){
+  const ok=FORM_PREFILL.indexOf("docs.google.com")>=0;
+  $("sendPanel").hidden=!ok||myGames.length===0;
+  if(!ok) return;
+  const name=$("nameInput").value.trim(), link=$("sendLink");
+  if(!name){ link.setAttribute("aria-disabled","true"); link.href="#"; $("sendHint").textContent="Type your name first."; return; }
+  const code="PG1;n="+enc(name)+";id="+pid+";t="+Date.now().toString(36)+";g="+myGames.map(g=>[g.total,Math.round(g.regret*10),g.onBest,Math.round(g.explore*100),g.first?1:0].join(".")).join("_");
+  const best=Math.max(...myGames.map(g=>g.total)), avgR=myGames.reduce((a,g)=>a+g.regret,0)/myGames.length;
+  const summary=myGames.length+" game"+(myGames.length>1?"s":"")+". Best: "+best+" successes. Average regret: "+f1(avgR);
+  let url=FORM_PREFILL; url=fill(url,"NAME",name); url=fill(url,"GAME","Pilot programs"); url=fill(url,"RESULT",summary); url=fill(url,"CODE",code);
+  link.href=url; link.removeAttribute("aria-disabled");
+  $("sendHint").textContent="Sends "+myGames.length+" game"+(myGames.length>1?"s":"")+".";
+}
+$("nameInput").addEventListener("input",()=>{ try{localStorage.setItem("dl-name",$("nameInput").value.trim());}catch(e){} updateSend(); });
+$("sendLink").addEventListener("click",e=>{ if($("sendLink").getAttribute("aria-disabled")==="true"){ e.preventDefault(); $("nameInput").focus(); } else { $("sendHint").textContent="Form opened in a new tab. Press Submit there."; } });
+
+/* ---------- tabs ---------- */
+let currentTab="play", visitedRace=false;
+function showTab(name){
+  currentTab=name;
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===name?"true":"false"));
+  ["play","race","horizon"].forEach(n=>$("tab-"+n).hidden=n!==name);
+  if(name==="race"){ visitedRace=true; $("raceLock").textContent=""; if(lastWatch) drawWatch(lastWatch, lastWatch.H); }
+  if(name==="horizon") drawHorizon();
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.tab==="race" && !visitedRace && myGames.length<1){ showTab("play"); $("gate").hidden=false; $("gate").scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  showTab(b.dataset.tab);
+}));
+$("gateAnyway").addEventListener("click",()=>{ $("gate").hidden=true; showTab("race"); });
+$("bigBtn").addEventListener("click",()=>{ const on=document.documentElement.classList.toggle("big"); $("bigBtn").textContent=on?"Normal size":"Big screen"; redraw(); });
+
+/* ---------- play ---------- */
+let game=null; const myGames=[];
+function newGame(){
+  game={rates:shuffle(RATES), s:[0,0,0,0], n:[0,0,0,0], month:0, total:0, log:[], expSum:0, onBest:0, explore:0, over:false};
+  $("resultBox").innerHTML=""; renderGame();
+}
+function renderGame(){
+  const g=game;
+  $("monthV").textContent = g.over ? "Done" : (g.month+1)+" / "+H_PLAY;
+  $("succV").textContent = g.total;
+  let lg=""; const last=g.log.slice(-40);
+  for(let i=0;i<H_PLAY;i++){ const e=last[i]; lg += e ? `<span class="${e.w?"w":"l"}" title="Month ${e.m}: ${NAMES[e.a]} ${e.w?"succeeded":"failed"}">${"ABCD"[e.a]}</span>` : `<span class="e"></span>`; }
+  $("log").innerHTML=lg;
+  $("progs").innerHTML = NAMES.map((nm,a)=>{
+    const n=g.n[a], s=g.s[a], r=n?s/n:0;
+    const isBest = g.over && g.rates[a]===BEST;
+    return `<div class="prog${isBest?" is-best":""}" id="prog${a}">
+      <div><div class="letter">PILOT ${"ABCD"[a]}</div><h3>${nm}</h3></div>
+      <div class="tally">${s} <small>of ${n} succeeded</small></div>
+      <div class="meter" title="Observed success rate"><i style="width:${n?r*100:0}%"></i>${g.over?`<b style="left:calc(${g.rates[a]*100}% - 1px)"></b>`:""}</div>
+      <div class="obs">${n?"Record so far: "+pct(r):"Not tried yet"}</div>
+      ${g.over?`<div class="truth">True rate: ${pct(g.rates[a])}${isBest?" · the best":""}</div>`:`<button class="btn primary" type="button" data-a="${a}">Fund this month</button>`}
+    </div>`;}).join("");
+}
+$("progs").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-a]"); if(!b||game.over) return;
+  const a=+b.dataset.a, g=game;
+  const obs=g.n.map((n,i)=>n?g.s[i]/n:-1), lead=Math.max(...obs);
+  if(g.n[a]===0 || obs[a]<lead-1e-9) g.explore++;
+  const w = rnd()<g.rates[a];
+  g.n[a]++; if(w){g.s[a]++; g.total++;}
+  g.expSum+=g.rates[a]; if(g.rates[a]===BEST) g.onBest++;
+  g.month++; g.log.push({a,w,m:g.month});
+  if(g.month>=H_PLAY) finish();
+  renderGame();
+  const el=$("prog"+a); if(el){ el.classList.add(w?"flash-win":"flash-lose"); setTimeout(()=>el&&el.classList.remove("flash-win","flash-lose"),450); }
+});
+function finish(){
+  const g=game; g.over=true;
+  const regret=BEST*H_PLAY-g.expSum;
+  const rec={game:myGames.length+1,total:g.total,H:H_PLAY,regret:Math.round(regret*100)/100,onBest:g.onBest,explore:g.explore/H_PLAY,first:myGames.length===0,t:Date.now()};
+  myGames.push(rec); renderMine(); updateSend();
+  $("gate").hidden=true; if(!visitedRace) $("raceLock").textContent="· unlocked";
+  const bestName=NAMES[g.rates.indexOf(BEST)];
+  $("resultBox").innerHTML=`<div class="result ${regret<3?"win":"lose"}"><div><strong>You got ${g.total} successes in ${H_PLAY} months.</strong>
+    <p>The best program was <b>${esc(bestName)}</b> (65%). Funding it every month would average ${BEST*H_PLAY} successes. Given the programs you chose, you gave up about <b>${f1(regret)}</b> successes on average. You funded the best program in ${g.onBest} of ${H_PLAY} months.</p></div>
+    <button class="btn primary" id="nextBtn" type="button">Play again</button></div>`;
+  $("nextBtn").addEventListener("click",newGame); $("nextBtn").focus();
+}
+function renderMine(){
+  $("myGames").innerHTML=myGames.slice().reverse().map(r=>`<tr><td>${r.game}</td><td class="num">${r.total}</td><td class="num">${BEST*H_PLAY}</td><td class="num">${f1(r.regret)}</td><td class="num">${r.onBest} / ${H_PLAY}</td></tr>`).join("");
+  const avg=myGames.reduce((a,r)=>a+r.regret,0)/myGames.length;
+  $("mySummary").textContent=`${myGames.length} game${myGames.length>1?"s":""} · average regret ${f1(avg)}`;
+}
+
+/* ---------- strategies ---------- */
+const BOTS=[
+  {id:"greedy",name:"Always the leader",col:"var(--s1)"},
+  {id:"eps",name:"Leader, but explore 10%",col:"var(--s2)"},
+  {id:"wsls",name:"Win-stay, lose-shift",col:"var(--s3)"},
+  {id:"ucb",name:"Optimism under uncertainty",col:"var(--s4)"},
+];
+function makeBot(id){
+  const s=[0,0,0,0], n=[0,0,0,0]; let t=0, cur=Math.floor(rnd()*4), lastWin=false;
+  return {
+    pick(){
+      t++;
+      if(id==="wsls"){ if(t>1 && !lastWin){ let o; do{o=Math.floor(rnd()*4);}while(o===cur); cur=o; } return cur; }
+      const untried=n.findIndex(x=>x===0); if(untried>=0) return untried;
+      if(id==="eps" && rnd()<0.1) return Math.floor(rnd()*4);
+      if(id==="ucb") return argmaxRand(n.map((ni,i)=>s[i]/ni+Math.sqrt(0.5*Math.log(t)/ni)));
+      return argmaxRand(n.map((ni,i)=>s[i]/ni));
+    },
+    learn(a,w){ n[a]++; if(w) s[a]++; lastWin=w; }
+  };
+}
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function gauss(){ let u=0,v=0; while(!u)u=rnd(); while(!v)v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+function runRace(H,drift,track){
+  let rates=shuffle(RATES);
+  const bots=BOTS.map(b=>makeBot(b.id));
+  const cum=BOTS.map(()=>0), exp=BOTS.map(()=>0); let perfect=0;
+  const paths=track?BOTS.map(()=>[0]):null, perfPath=track?[0]:null;
+  for(let m=0;m<H;m++){
+    const best=Math.max(...rates); perfect+=best;
+    bots.forEach((b,i)=>{ const a=b.pick(); const w=rnd()<rates[a]; b.learn(a,w); if(w) cum[i]++; exp[i]+=rates[a]; if(track) paths[i].push(cum[i]); });
+    if(track) perfPath.push(perfect);
+    if(drift) rates=rates.map(r=>clamp(r+gauss()*0.03,0.05,0.95));
+  }
+  return {cum,exp,perfect,paths,perfPath,H};
+}
+
+/* ---------- race tab ---------- */
+$("hRange").addEventListener("input",e=>{ $("hVal").textContent=e.target.value; });
+let lastWatch=null, watchTimer=null;
+$("watchBtn").addEventListener("click",()=>{
+  const H=+$("hRange").value, drift=$("driftChk").checked;
+  const r=runRace(H,drift,true); lastWatch=r; $("watchBox").hidden=false;
+  if(watchTimer) clearInterval(watchTimer);
+  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce){ drawWatch(r,H); return; }
+  let t=0; const stepN=Math.max(1,Math.round(H/60));
+  watchTimer=setInterval(()=>{ t=Math.min(H,t+stepN); drawWatch(r,t); if(t>=H){clearInterval(watchTimer);watchTimer=null;} },55);
+});
+function drawWatch(r,t){
+  const H=r.H, top=Math.max(4,Math.ceil(r.perfPath[H]/5)*5);
+  const step=top<=20?5:top<=60?10:top<=120?20:40;
+  const yTicks=[];for(let v=0;v<=top;v+=step)yTicks.push({v,label:String(v)});
+  const xs=[0,Math.round(H/4),Math.round(H/2),Math.round(3*H/4),H]; const xTicks=[...new Set(xs)].map(v=>({v,label:String(v)}));
+  chartFrame($("watchChart"),{x:[0,H],y:[0,top],xTicks,yTicks,xLabel:"Month",yLabel:"Successes so far",aria:"Race chart",
+    draw:({sx,sy})=>{
+      let s="";
+      const line=(arr,col,dash,w)=>`<polyline points="${arr.slice(0,t+1).map((v,i)=>sx(i).toFixed(1)+","+sy(v).toFixed(1)).join(" ")}" style="fill:none;stroke:${col};stroke-width:${w};${dash?"stroke-dasharray:5 4;":""}stroke-linejoin:round"/>`;
+      s+=line(r.perfPath,"var(--muted)",true,1.8);
+      r.paths.forEach((p,i)=>{ s+=line(p,BOTS[i].col,false,2.6); s+=`<circle cx="${sx(t)}" cy="${sy(p[t])}" r="4" style="fill:${BOTS[i].col}"/>`; });
+      return s;
+    }});
+  $("watchLegend").innerHTML=BOTS.map((b,i)=>`<span><i style="background:${b.col}"></i>${b.name}: <b class="mono">${r.paths[i][t]}</b></span>`).join("")+`<span><i style="background:var(--muted)"></i>Perfect knowledge (average): <b class="mono">${f1(r.perfPath[t])}</b></span>`;
+}
+$("raceBtn").addEventListener("click",()=>{
+  const H=+$("hRange").value, drift=$("driftChk").checked, T=1000;
+  const reg=BOTS.map(()=>0), got=BOTS.map(()=>0); let perf=0;
+  for(let k=0;k<T;k++){ const r=runRace(H,drift,false); r.exp.forEach((e,i)=>{reg[i]+=r.perfect-e; got[i]+=r.cum[i];}); perf+=r.perfect; }
+  const rows=BOTS.map((b,i)=>({name:b.name,col:b.col,reg:reg[i]/T,got:got[i]/T}));
+  const mine = (H===H_PLAY && !drift && myGames.length) ? myGames.reduce((a,g)=>a+g.regret,0)/myGames.length : null;
+  if(mine!=null) rows.push({name:"You ("+myGames.length+" game"+(myGames.length>1?"s":"")+")",col:"var(--you)",reg:mine,got:null});
+  const maxR=Math.max(...rows.map(r=>r.reg),1);
+  const bestRow=rows.slice(0,4).reduce((a,b)=>b.reg<a.reg?b:a);
+  $("raceBars").innerHTML=rows.map(r=>`<div class="hbar"><span><span class="sw" style="background:${r.col}"></span>${esc(r.name)}</span><div class="track"><div class="fill" style="width:${r.reg/maxR*100}%;background:${r.col}"></div></div><span class="val">${f1(r.reg)}</span></div>`).join("");
+  $("raceTitle").textContent=`Successes lost compared with perfect knowledge, over ${H} months (lower is better)`;
+  $("raceNote").innerHTML=`Average of 1,000 races${drift?" with drifting rates":""}. Perfect knowledge averages ${f1(perf/T)} successes. Best strategy here: <b>${esc(bestRow.name)}</b>.${mine==null&&myGames.length?" Set the slider to 40 months with no drift to compare with your own games.":""}`;
+  $("raceBox").hidden=false;
+});
+
+/* ---------- horizon tab ---------- */
+function binomPmf(n,p){ const out=[]; let c=1; for(let k=0;k<=n;k++){ if(k>0) c=c*(n-k+1)/k; out.push(c*Math.pow(p,k)*Math.pow(1-p,n-k)); } return out; }
+function etcExact(H,n){
+  // test each program n times (4n months), then commit to the best record (ties split evenly); exact average success rate over H months
+  const pm=RATES.map(p=>binomPmf(n,p));
+  const less=pm.map(a=>{ const c=[0]; for(let k=0;k<a.length;k++) c.push(c[k]+a[k]); return c; });
+  let commit=0;
+  for(let a=0;a<4;a++){
+    const o=[0,1,2,3].filter(b=>b!==a); let pa=0;
+    for(let s=0;s<=n;s++){
+      let sub=0;
+      for(let mask=0;mask<8;mask++){ let pr=1,t=0; for(let j=0;j<3;j++){ if(mask>>j&1){ pr*=pm[o[j]][s]; t++; } else pr*=less[o[j]][s]; } sub+=pr/(t+1); }
+      pa+=pm[a][s]*sub;
+    }
+    commit+=pa*RATES[a];
+  }
+  return (n*RATES.reduce((x,y)=>x+y,0)+(H-4*n)*commit)/H;
+}
+function etcCurve(H){
+  const pts=[]; for(let n=0;4*n<=H;n++) pts.push({m:4*n,n,v:etcExact(H,n)});
+  let b=pts[0]; pts.forEach(p=>{ if(p.v>b.v+1e-12) b=p; });
+  return {pts,best:b};
+}
+const curveCache={};
+function getCurve(H){ return curveCache[H]||(curveCache[H]=etcCurve(H)); }
+$("h2Range").addEventListener("input",e=>{ $("h2Val").textContent=e.target.value; });
+$("h2Range").addEventListener("input",drawHorizon);
+let tableDone=false;
+function drawHorizon(){
+  if($("tab-horizon").hidden) return;
+  const H=+$("h2Range").value; const c=getCurve(H);
+  const yTicks=[.4,.45,.5,.55,.6,.65,.7].map(v=>({v,label:Math.round(v*100)+"%"}));
+  const xs=[0,Math.round(H/4),Math.round(H/2),Math.round(3*H/4),H]; const xTicks=[...new Set(xs)].map(v=>({v,label:String(v)}));
+  chartFrame($("horizonChart"),{x:[0,H],y:[.4,.7],xTicks,yTicks,xLabel:"Months spent testing before committing",yLabel:"Success rate over all months",aria:"Explore then commit curve",
+    draw:({sx,sy,W,m})=>{
+      let s="";
+      s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${sy(.65)}" y2="${sy(.65)}" style="stroke:var(--good);stroke-dasharray:5 4;stroke-width:1.5"/><text x="${W-m.r}" y="${sy(.65)-6}" text-anchor="end" style="fill:var(--good);font-weight:600">Perfect knowledge 65%</text>`;
+      s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${sy(.4875)}" y2="${sy(.4875)}" style="stroke:var(--muted);stroke-dasharray:2 4;stroke-width:1.5"/><text x="${W-m.r}" y="${sy(.4875)+16}" text-anchor="end">Random pick 49%</text>`;
+      const pts=c.pts.map(p=>`${sx(p.m).toFixed(1)},${sy(p.v).toFixed(1)}`).join(" ");
+      s+=`<polyline points="${pts}" style="fill:none;stroke:var(--accent);stroke-width:2.6;stroke-linejoin:round"/>`;
+      s+=`<circle cx="${sx(c.best.m)}" cy="${sy(c.best.v)}" r="6" style="fill:var(--mark);stroke:var(--ink);stroke-width:1.5"/>`;
+      const anchor = c.best.m > H*0.7 ? "end" : "start";
+      s+=`<text x="${sx(c.best.m)+(anchor==="end"?-10:10)}" y="${sy(c.best.v)-10}" text-anchor="${anchor}" style="fill:var(--ink);font-weight:700">Test ${c.best.m} months → ${pct(c.best.v)}</text>`;
+      return s;
+    }});
+  $("horizonCallout").innerHTML=`<b>With ${H} months, test for ${c.best.m} months</b> (each program ${c.best.n} times, ${pct(c.best.m/H)} of the time), then commit. Testing too little risks locking in a weak program; testing too long wastes months on programs you already know are worse.`;
+  if(!tableDone){ tableDone=true; setTimeout(()=>{
+    $("horizonTable").innerHTML=[12,20,40,100,200,500].map(h=>{ const cc=getCurve(h); return `<tr><td class="num">${h}</td><td class="num">${cc.best.m}</td><td class="num">${pct(cc.best.m/h)}</td><td class="num">${pct(cc.best.v)}</td></tr>`; }).join("");
+  },30); }
+}
+
+/* ---------- charts ---------- */
+function chartFrame(el,opt){
+  const W=Math.max(300,Math.round(el.clientWidth||600));
+  const big=document.documentElement.classList.contains("big");
+  const H=Math.round(Math.min(360,Math.max(230,W*0.5))*(big?1.15:1));
+  const m={l:56,r:18,t:18,b:48};
+  const sx=v=>m.l+(v-opt.x[0])/(opt.x[1]-opt.x[0])*(W-m.l-m.r);
+  const sy=v=>H-m.b-(v-opt.y[0])/(opt.y[1]-opt.y[0])*(H-m.t-m.b);
+  let g="";
+  (opt.yTicks||[]).forEach(t=>{ g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${sy(t.v)}" y2="${sy(t.v)}" style="stroke:var(--grid)"/><text x="${m.l-8}" y="${sy(t.v)+4}" text-anchor="end">${t.label}</text>`; });
+  (opt.xTicks||[]).forEach(t=>{ g+=`<text x="${sx(t.v)}" y="${H-m.b+18}" text-anchor="middle">${t.label}</text>`; });
+  g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" style="stroke:var(--muted)"/>`;
+  if(opt.xLabel) g+=`<text class="axis-title" x="${(m.l+W-m.r)/2}" y="${H-8}" text-anchor="middle">${opt.xLabel}</text>`;
+  if(opt.yLabel) g+=`<text class="axis-title" transform="translate(14 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle">${opt.yLabel}</text>`;
+  g+=opt.draw({sx,sy,W,H,m});
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opt.aria||"")}">${g}</svg>`;
+}
+
+function redraw(){ if(currentTab==="race"&&lastWatch&&!watchTimer) drawWatch(lastWatch,lastWatch.H); if(currentTab==="horizon") drawHorizon(); }
+let rt=null; window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(redraw,150);});
+newGame(); updateSend();
+})();
+</script>
+
+</body>
+</html>
