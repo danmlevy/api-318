@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Carter Racing Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: title and the p dial on top; the big decision tree beside its run controls; the two 1,000-run grids and the takeaway across the bottom */
+:root{
+  --paper:#F2F5F9; --card:#FFFFFF; --ink:#12203A; --muted:#5A6882; --rule:#D5DDE8;
+  --blue:#1D4F91; --blue-soft:#E2EBF7; --win:#1F8A5B; --mid:#4A86D8; --bust:#C9462C; --empty:#E3E8EF;
+  --pgood:#6BDCA6; --pbad:#FF9277;
+  --display:"Saira Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0C1421; --card:#132035; --ink:#E6ECF6; --muted:#98A6BD; --rule:#28374F;
+    --blue:#89B0EE; --blue-soft:#1A2C48; --win:#46C18C; --mid:#6EA4F2; --bust:#F1765C; --empty:#1D2A40;
+    --pgood:#16774A; --pbad:#B0381F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C1421; --card:#132035; --ink:#E6ECF6; --muted:#98A6BD; --rule:#28374F;
+  --blue:#89B0EE; --blue-soft:#1A2C48; --win:#46C18C; --mid:#6EA4F2; --bust:#F1765C; --empty:#1D2A40;
+    --pgood:#16774A; --pbad:#B0381F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
+.wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+/* top band */
+.top{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.title{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);display:flex;align-items:center;gap:10px}
+.flag{width:28px;height:14px;flex:none;background:
+  conic-gradient(var(--ink) 25%, transparent 0 50%, var(--ink) 0 75%, transparent 0) 0 0/7px 7px;border:1px solid var(--ink)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,3.6vw,52px);line-height:1;margin:0;text-wrap:balance}
+.lede{margin:4px 0 0;color:var(--muted);max-width:60ch}
+
+.dial{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.dial-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dial-head label{font-weight:600}
+.dial-head label span{display:block;font-weight:400;font-size:14px;color:var(--muted)}
+.pval{font-family:var(--display);font-size:46px;font-weight:700;line-height:1;color:var(--blue)}
+.slider{position:relative;padding-top:4px}
+input[type=range]{width:100%;accent-color:var(--blue);height:28px;margin:0}
+.be{position:absolute;top:30px;left:calc(33.333% + 3px);transform:translateX(-50%);font-size:12px;color:var(--muted);white-space:nowrap;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.be::before{content:"";width:2px;height:8px;background:var(--muted);margin-bottom:2px}
+.ev-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.ev{border-top:3px solid var(--rule);padding-top:6px;min-width:0}
+.ev.best{border-top-color:var(--blue)}
+.ev .lbl{font-size:13px;color:var(--muted);display:block}
+.ev b{font-family:var(--display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.ev small{display:block;font-size:13px;color:var(--muted)}
+.ev .tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-left:6px;vertical-align:middle}
+
+/* main */
+.stage{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.side{display:flex;flex-direction:column;min-width:0}
+.side .log{flex:1}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:16px 18px;min-width:0}
+.card h2{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.tree-wrap{overflow-x:auto}
+svg.tree{display:block;width:100%;min-width:560px;height:auto}
+.edge{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.flow{fill:none;stroke:var(--blue);stroke-opacity:.22;stroke-linejoin:round;stroke-linecap:round;transition:stroke-width .25s}
+.node-d{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
+.node-c{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
+.t-lbl{fill:var(--ink);font-family:var(--body);font-weight:600;font-size:22px}
+.t-prob{fill:var(--muted);font-family:var(--display);font-weight:600;font-size:23px}
+.t-seen{fill:var(--blue);font-family:var(--body);font-weight:600;font-size:15px}
+.t-pay{fill:var(--ink);font-family:var(--display);font-weight:700;font-size:34px}
+.t-sub{fill:var(--muted);font-family:var(--body);font-size:14px}
+.t-cnt{fill:var(--ink);font-family:var(--display);font-weight:700;font-size:36px;font-variant-numeric:tabular-nums}
+.leaf.win .t-pay{fill:var(--win)} .leaf.mid .t-pay{fill:var(--mid)} .leaf.bust .t-pay{fill:var(--bust)}
+.leaf.flash .t-pay,.leaf.flash .t-cnt{animation:pop .7s ease-out}
+@keyframes pop{0%{opacity:.2}40%{opacity:1}100%{opacity:1}}
+.leaf-ring{fill:none;stroke-width:3;opacity:0}
+.leaf.flash .leaf-ring{animation:ring .8s ease-out}
+@keyframes ring{0%{opacity:.9;r:6}100%{opacity:0;r:26}}
+.node-c.pulse{stroke:var(--blue);stroke-width:6;animation:nodepulse .9s ease-in-out infinite alternate}
+@keyframes nodepulse{from{stroke-opacity:1}to{stroke-opacity:.35}}
+.panel-bg{fill:var(--ink)}
+.p-lbl{fill:var(--card);opacity:.78;font-family:var(--body);font-weight:700;font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+.p-num{fill:var(--card);font-family:var(--display);font-weight:700;font-size:76px;font-variant-numeric:tabular-nums}
+.p-num.rolling{opacity:.6}
+.p-rule{fill:var(--card);font-family:var(--body);font-size:17px}
+.p-rule2{fill:var(--card);font-family:var(--display);font-weight:600;font-size:26px}
+.p-res{font-family:var(--body);font-weight:700;font-size:19px}
+.p-res.good{fill:var(--pgood)} .p-res.bad{fill:var(--pbad)} .p-res.neutral{fill:var(--card)}
+.puff{fill:#8C929C;opacity:0;transform-box:fill-box;transform-origin:center;animation:puff 1.8s ease-out infinite}
+@keyframes puff{0%{opacity:.75;transform:translate(0,0) scale(.4)}100%{opacity:0;transform:translate(-18px,-30px) scale(1.8)}}
+.howto{font-size:14px;color:var(--muted);margin:6px 0 0;max-width:75ch}
+
+.controls{display:flex;flex-direction:column;gap:16px}
+.group{display:flex;flex-direction:column;gap:8px;min-width:0}
+.group .gl{font-weight:700;font-size:15px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;font-size:15px;border-radius:8px;padding:10px 14px;cursor:pointer;border:1.5px solid var(--ink);background:var(--card);color:var(--ink)}
+button:hover:not(:disabled){background:var(--blue-soft)}
+button.solid{background:var(--blue);border-color:var(--blue);color:var(--card)}
+button.solid:hover:not(:disabled){filter:brightness(1.08);background:var(--blue)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--mid);outline-offset:2px}
+.utility{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--rule);font-size:15px}
+.utility label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.utility input{width:18px;height:18px;accent-color:var(--blue)}
+.utility .spacer{flex:1}
+button.ghost{border-color:var(--rule);font-size:14px;padding:8px 12px}
+
+.log{margin-top:14px;background:var(--paper);border-radius:8px;padding:12px 14px;min-height:96px;font-size:15.5px}
+.log .lh{font-family:var(--display);font-weight:700;font-size:22px;margin-bottom:2px}
+.log p{margin:2px 0}
+.log p b.num{font-size:26px}
+.chip{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);margin-left:6px;vertical-align:2px}
+
+/* results */
+.results{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr);gap:18px;align-items:stretch}
+.insight{align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.panel header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.panel h3{font-family:var(--display);font-size:30px;font-weight:700;margin:0;line-height:1}
+.runs{color:var(--muted);font-size:14px}
+.runs b{font-family:var(--display);font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums}
+canvas{display:block;width:100%;aspect-ratio:50/20;max-width:100%}
+.recent{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+.tally{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.tally li{display:grid;grid-template-columns:16px minmax(0,1fr) 70px 64px;gap:10px;align-items:center;font-size:15px}
+.sw{width:16px;height:16px;border-radius:3px;display:block}
+.sw.win{background:var(--win)} .sw.mid{background:var(--mid)} .sw.bust{background:var(--bust)}
+.tally b{font-family:var(--display);font-size:24px;text-align:right;font-variant-numeric:tabular-nums}
+.tally em{font-style:normal;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.avg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--rule)}
+.avg .lbl{display:block;font-size:13px;color:var(--muted)}
+.avg b{font-family:var(--display);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.avg .ev-small b{color:var(--muted)}
+.insight{background:var(--ink);color:var(--paper);border-radius:10px;padding:16px 18px;font-size:16.5px}
+.insight strong{color:var(--paper)}
+.insight p{margin:0 0 6px}.insight p:last-child{margin:0}
+
+@media (max-width:1180px){ .results{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .insight{grid-column:1/-1} }
+@media (max-width:1020px){ .top,.stage{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:760px){ .results{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:560px){
+  .controls,.ev-row,.avg{grid-template-columns:1fr}
+  .tally li{grid-template-columns:16px minmax(0,1fr) 54px 50px;font-size:14px}
+}
+@media (prefers-reduced-motion: reduce){ .puff{animation:none;opacity:.5} .node-c.pulse{animation:none} .flow{transition:none} .leaf.flash .t-pay,.leaf.flash .t-cnt,.leaf.flash .leaf-ring{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="top">
+    <div class="title">
+      <div class="eyebrow"><span class="flag" aria-hidden="true"></span>API-318 · Decision analysis</div>
+      <h1>Carter Racing, run 1,000 times</h1>
+      <p class="lede">You make the decision once. The world then picks a branch. Run the same decision many times and watch how often it lands on each branch.</p>
+    </div>
+    <div class="dial">
+      <div class="dial-head">
+        <label for="p">Probability the car finishes, p<span>Changing p clears all runs.</span></label>
+        <div class="pval num" id="pval">0.10</div>
+      </div>
+      <div class="slider">
+        <input type="range" id="p" min="0" max="1" step="0.01" value="0.10" aria-describedby="be">
+        <div class="be" id="be">break-even 1/3</div>
+      </div>
+      <div class="ev-row">
+        <div class="ev" id="ev-race-box"><span class="lbl">Expected value of racing</span><b id="ev-race">$240,000</b><span class="tag" id="ev-race-tag"></span><small>$2,400,000 × p</small></div>
+        <div class="ev best" id="ev-no-box"><span class="lbl">Expected value of not racing</span><b>$800,000</b><span class="tag" id="ev-no-tag">Better</span><small>Guaranteed</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage">
+    <div class="card">
+      <h2>The decision tree</h2>
+      <div class="tree-wrap"><svg class="tree" id="tree" viewBox="0 0 1170 478" role="img" aria-label="Decision tree: Race or Don't race. Racing leads to Finish with probability p or Not finish with probability 1 minus p, paying $0. Finishing leads to Top 5 with probability 0.8 paying $2,800,000, or Not top 5 with probability 0.2 paying $800,000. Not racing pays $800,000."></svg></div>
+      <p class="howto">Each car is one race day. At each circle, nature draws a random number between 0 and 1, and the probabilities decide which branch the car takes. When Carter does not race, the car stays on its trailer and goes home. Branch width shows how many runs have traveled each branch.</p>
+    </div>
+
+    <div class="card side">
+      <h2>Run the decision</h2>
+      <div class="controls">
+        <div class="group">
+          <span class="gl">Decide to race</span>
+          <div class="btns">
+            <button id="r1">Once</button>
+            <button id="r10">10 times</button>
+            <button id="r1000" class="solid">1,000 times</button>
+          </div>
+        </div>
+        <div class="group">
+          <span class="gl">Decide not to race</span>
+          <div class="btns">
+            <button id="n1">Once</button>
+            <button id="n10">10 times</button>
+            <button id="n1000" class="solid">1,000 times</button>
+          </div>
+        </div>
+      </div>
+      <div class="log" id="log" aria-live="polite"><div class="lh">Ready</div><p>Pick a decision. Run it once to follow one race day through the tree, or 1,000 times to see the pattern.</p></div>
+      <div class="utility">
+        <label><input type="checkbox" id="skip"> Skip animation</label>
+        <label><input type="checkbox" id="sort"> Group squares by outcome</label>
+        <span class="spacer"></span>
+        <button class="ghost" id="reset">Reset runs</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="results">
+      <article class="card panel">
+        <header><h3>Race</h3><span class="runs"><b id="race-n">0</b> runs</span></header>
+        <canvas id="wf-race" aria-label="Grid of race outcomes, one square per run"></canvas>
+        <p class="recent" id="race-recent" hidden>Grid shows the most recent 1,000 runs.</p>
+        <ul class="tally">
+          <li><i class="sw win"></i><span>Top 5 · $2,800,000</span><b id="race-top5">0</b><em id="race-top5-p">0%</em></li>
+          <li><i class="sw mid"></i><span>Not top 5 · $800,000</span><b id="race-not5">0</b><em id="race-not5-p">0%</em></li>
+          <li><i class="sw bust"></i><span>Not finish · $0</span><b id="race-fail">0</b><em id="race-fail-p">0%</em></li>
+        </ul>
+        <div class="avg">
+          <div><span class="lbl">Average payoff per run</span><b id="race-avg">n/a</b></div>
+          <div class="ev-small"><span class="lbl">Expected value</span><b id="race-ev">$240,000</b></div>
+        </div>
+      </article>
+
+      <article class="card panel">
+        <header><h3>Don't race</h3><span class="runs"><b id="no-n">0</b> runs</span></header>
+        <canvas id="wf-no" aria-label="Grid of don't-race outcomes, one square per run"></canvas>
+        <p class="recent" id="no-recent" hidden>Grid shows the most recent 1,000 runs.</p>
+        <ul class="tally">
+          <li><i class="sw mid"></i><span>Sure thing · $800,000</span><b id="no-cnt">0</b><em id="no-p">0%</em></li>
+        </ul>
+        <div class="avg">
+          <div><span class="lbl">Average payoff per run</span><b id="no-avg">n/a</b></div>
+          <div class="ev-small"><span class="lbl">Expected value</span><b>$800,000</b></div>
+        </div>
+      </article>
+
+      <div class="insight" id="insight"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const SURE = 800000;
+  const PAY = { top5: 2800000, not5: 800000, fail: 0, norace: 800000 };
+  const LEAFX = 900;
+  const NODE = { root: [70, 315], A: [380, 190], B: [640, 100] };
+  const br = (from, y, toX) => [from, [from[0] + 60, y], [toX, y]];
+  const LEGS = {
+    race:   br(NODE.root, 190, NODE.A[0]),
+    norace: br(NODE.root, 440, LEAFX),
+    finish: br(NODE.A, 100, NODE.B[0]),
+    fail:   br(NODE.A, 280, LEAFX),
+    top5:   br(NODE.B, 50, LEAFX),
+    not5:   br(NODE.B, 150, LEAFX),
+  };
+  const LEAVES = {
+    top5:   { y: 50,  cls: 'win',  pay: '$2,800,000', sub: '$2M + $800K' },
+    not5:   { y: 150, cls: 'mid',  pay: '$800,000',   sub: '' },
+    fail:   { y: 280, cls: 'bust', pay: '$0',         sub: '' },
+    norace: { y: 440, cls: 'mid',  pay: '$800,000',   sub: 'guaranteed' },
+  };
+
+  let p = 0.10;
+  let S;
+  function fresh() {
+    S = { race: { n: 0, sum: 0, top5: 0, not5: 0, fail: 0, seq: [] },
+          norace: { n: 0, sum: 0, seq: [] } };
+  }
+  fresh();
+
+  const fmt = x => '$' + Math.round(x).toLocaleString('en-US');
+  const pct = (a, b) => b ? (100 * a / b).toFixed(a === b || a === 0 ? 0 : 1) + '%' : '0%';
+  const f2 = x => x.toFixed(2);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- build the tree ---------- */
+  const svg = $('tree');
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs, parent, text) => {
+    const el = document.createElementNS(NS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    (parent || svg).appendChild(el);
+    return el;
+  };
+  const ptsAttr = pts => pts.map(q => q.join(',')).join(' ');
+  const gFlow = mk('g', {});
+  const gEdge = mk('g', {});
+  const flows = {};
+  for (const k in LEGS) {
+    flows[k] = mk('polyline', { points: ptsAttr(LEGS[k]), class: 'flow', 'stroke-width': 0 }, gFlow);
+    mk('polyline', { points: ptsAttr(LEGS[k]), class: 'edge' }, gEdge);
+  }
+  const gTxt = mk('g', {});
+  const label = (x, y, cls, txt, anchor) => mk('text', { x, y, class: cls, 'text-anchor': anchor || 'middle' }, gTxt, txt);
+  const mid = k => (LEGS[k][1][0] + LEGS[k][2][0]) / 2;
+  const T = {};
+  label(215, 178, 't-lbl', 'Race');
+  T.race = label(215, 214, 't-seen', '');
+  label(300, 428, 't-lbl', "Don't race");
+  T.norace = label(300, 464, 't-seen', '');
+  label(mid('finish'), 88, 't-lbl', 'Finish');
+  T.pFinish = label(mid('finish'), 126, 't-prob', 'p = 0.10');
+  T.finish = label(mid('finish'), 146, 't-seen', '');
+  label(660, 268, 't-lbl', 'Not finish');
+  T.pFail = label(660, 306, 't-prob', '1 - p = 0.90');
+  T.fail = label(660, 326, 't-seen', '');
+  label(765, 37, 't-lbl', 'Top 5');
+  label(765, 76, 't-prob', '0.8');
+  T.top5 = label(765, 96, 't-seen', '');
+  label(765, 138, 't-lbl', 'Not top 5');
+  label(765, 176, 't-prob', '0.2');
+  T.not5 = label(765, 196, 't-seen', '');
+
+  const leafEls = {};
+  for (const k in LEAVES) {
+    const L = LEAVES[k];
+    const g = mk('g', { class: 'leaf ' + L.cls });
+    mk('circle', { cx: LEAFX, cy: L.y, r: 6, class: 'leaf-ring', stroke: `var(--${L.cls})` }, g);
+    mk('text', { x: LEAFX + 14, y: L.y + 10, class: 't-pay' }, g, L.pay);
+    if (L.sub) mk('text', { x: LEAFX + 15, y: L.y + 30, class: 't-sub' }, g, L.sub);
+    const c = mk('text', { x: 1164, y: L.y + 10, class: 't-cnt', 'text-anchor': 'end' }, g, '0');
+    const cp = mk('text', { x: 1164, y: L.y + 30, class: 't-sub', 'text-anchor': 'end' }, g, '');
+    leafEls[k] = { g, c, cp };
+  }
+  mk('rect', { x: NODE.root[0] - 15, y: NODE.root[1] - 15, width: 30, height: 30, class: 'node-d' });
+  const nodeEl = {
+    A: mk('circle', { cx: NODE.A[0], cy: NODE.A[1], r: 13, class: 'node-c' }),
+    B: mk('circle', { cx: NODE.B[0], cy: NODE.B[1], r: 13, class: 'node-c' }),
+  };
+  /* vehicles: a red race car, and a transporter that takes it home. Drawn pointing right, wheels resting on y = 0 */
+  const defs = mk('defs', {});
+  defs.innerHTML = `
+    <g id="car">
+      <rect x="-29" y="-25" width="9" height="3.5" rx="1" fill="#B3161C"/>
+      <rect x="-26" y="-23" width="2.4" height="8" fill="#2A2D33"/>
+      <path d="M-27,-7 L-27,-14 L-21,-16 L-12,-17 L-6,-23 L5,-23 L9,-17 L21,-15 L28,-11 L29,-7 Z" fill="#D7262B" stroke="#6E0E12" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M-5,-21 L4,-21 L6,-17 L-7,-17 Z" fill="#2A2D33"/>
+      <circle cx="-1" cy="-22" r="4.2" fill="#F5C518" stroke="#2A2D33" stroke-width="1"/>
+      <circle cx="13" cy="-12" r="3.6" fill="#FFFFFF"/>
+      <circle cx="-17" cy="-6" r="6" fill="#16181D"/><circle cx="-17" cy="-6" r="2.3" fill="#C9CED6"/>
+      <circle cx="18" cy="-6" r="6" fill="#16181D"/><circle cx="18" cy="-6" r="2.3" fill="#C9CED6"/>
+    </g>
+    <g id="truck">
+      <rect x="-46" y="-15" width="58" height="5" rx="1" fill="#3B4B66"/>
+      <rect x="-46" y="-11" width="80" height="5" fill="#2A2D33"/>
+      <path d="M12,-6 L12,-30 L25,-30 L33,-19 L36,-18 L36,-6 Z" fill="#1D4F91" stroke="#0E2A52" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M15,-27 L24,-27 L30,-19 L15,-19 Z" fill="#CFE3FF"/>
+      <use href="#car" transform="translate(-17,-15) scale(.62)"/>
+      <circle cx="-36" cy="-5" r="5" fill="#16181D"/><circle cx="-36" cy="-5" r="1.9" fill="#C9CED6"/>
+      <circle cx="-24" cy="-5" r="5" fill="#16181D"/><circle cx="-24" cy="-5" r="1.9" fill="#C9CED6"/>
+      <circle cx="26" cy="-5" r="5" fill="#16181D"/><circle cx="26" cy="-5" r="1.9" fill="#C9CED6"/>
+    </g>`;
+  const VEH = { race: { id: '#car', front: 30 }, norace: { id: '#truck', front: 37 } };
+  const gDots = mk('g', {});
+
+  /* nature's draw panel, in the empty top-left corner of the tree */
+  const panel = mk('g', { visibility: 'hidden' });
+  mk('rect', { x: 26, y: 18, width: 336, height: 136, rx: 12, class: 'panel-bg' }, panel);
+  const pLbl = mk('text', { x: 46, y: 47, class: 'p-lbl' }, panel, '');
+  const pNum = mk('text', { x: 42, y: 124, class: 'p-num' }, panel, '');
+  const pR1 = mk('text', { x: 222, y: 82, class: 'p-rule' }, panel, '');
+  const pR2 = mk('text', { x: 222, y: 108, class: 'p-rule2' }, panel, '');
+  const pRes = mk('text', { x: 222, y: 136, class: 'p-res' }, panel, '');
+  let rollTimer = null;
+  const DRAWS = [
+    { node: 'A', lbl: "Nature's draw: engine", r1: 'Finishes if', r2: () => `below ${f2(p)}`,
+      res: u => u < p ? ['Car finishes', 'good'] : ['Engine fails', 'bad'] },
+    { node: 'B', lbl: "Nature's draw: placing", r1: 'Top 5 if', r2: () => 'below 0.80',
+      res: u => u < 0.8 ? ['Top 5', 'good'] : ['Not top 5', 'neutral'] },
+  ];
+  function clearPulse() { nodeEl.A.classList.remove('pulse'); nodeEl.B.classList.remove('pulse'); }
+  function showDraw(k, u, animate) {
+    const D = DRAWS[k];
+    clearInterval(rollTimer); clearPulse();
+    nodeEl[D.node].classList.add('pulse');
+    pLbl.textContent = D.lbl; pR1.textContent = D.r1; pR2.textContent = D.r2();
+    pRes.textContent = ''; pRes.setAttribute('class', 'p-res');
+    panel.setAttribute('visibility', 'visible');
+    const settle = () => {
+      clearInterval(rollTimer);
+      pNum.textContent = u.toFixed(3); pNum.setAttribute('class', 'p-num');
+      const [txt, cls] = D.res(u);
+      pRes.textContent = txt; pRes.setAttribute('class', 'p-res ' + cls);
+    };
+    if (!animate) { settle(); return; }
+    pNum.setAttribute('class', 'p-num rolling');
+    const t0 = performance.now();
+    rollTimer = setInterval(() => {
+      if (performance.now() - t0 > 700) settle();
+      else pNum.textContent = Math.random().toFixed(3);
+    }, 45);
+  }
+  function showSure() {
+    clearInterval(rollTimer); clearPulse();
+    pLbl.textContent = 'No random draw';
+    pNum.textContent = '$800K'; pNum.setAttribute('class', 'p-num');
+    pR1.textContent = 'No chance'; pR2.textContent = 'node here';
+    pRes.textContent = 'Paid for sure'; pRes.setAttribute('class', 'p-res neutral');
+    panel.setAttribute('visibility', 'visible');
+  }
+  let parked = null;
+  function hideTag() {
+    clearInterval(rollTimer); clearPulse();
+    panel.setAttribute('visibility', 'hidden');
+    if (parked) { parked.remove(); parked = null; }
+  }
+
+  /* ---------- one run ---------- */
+  function simulate(dec) {
+    if (dec === 'norace') return { dec, path: ['norace'], leaf: 'norace', pay: PAY.norace, draws: [] };
+    const u1 = Math.random();
+    if (!(u1 < p)) return { dec, path: ['race', 'fail'], leaf: 'fail', pay: 0, draws: [u1] };
+    const u2 = Math.random();
+    const leaf = u2 < 0.8 ? 'top5' : 'not5';
+    return { dec, path: ['race', 'finish', leaf], leaf, pay: PAY[leaf], draws: [u1, u2] };
+  }
+
+  /* ---------- verdicts (Russo and Schoemaker quadrant) ---------- */
+  function decisionQuality(dec) {
+    if (Math.abs(p - 1 / 3) < 0.005) return 'tie';
+    const raceBetter = p > 1 / 3;
+    return (dec === 'race') === raceBetter ? 'good' : 'bad';
+  }
+  function verdict(run) {
+    const dq = decisionQuality(run.dec);
+    if (run.pay === SURE) return dq === 'tie' ? 'Toss-up decision' : (dq === 'good' ? 'Good decision' : 'Bad decision');
+    const good = run.pay > SURE;
+    if (dq === 'tie') return good ? 'Good outcome' : 'Bad outcome';
+    if (dq === 'good') return good ? 'Deserved success' : 'Bad break';
+    return good ? 'Dumb luck' : 'Poetic justice';
+  }
+
+  /* ---------- commit results ---------- */
+  let dirty = true;
+  function commit(run, single) {
+    if (run.dec === 'race') {
+      const R = S.race; R.n++; R.sum += run.pay; R[run.leaf]++; R.seq.push(run.leaf);
+    } else {
+      const N = S.norace; N.n++; N.sum += run.pay; N.seq.push('norace');
+    }
+    if (single) {
+      const g = leafEls[run.leaf].g;
+      g.classList.remove('flash'); void g.getBBox(); g.classList.add('flash');
+    }
+    dirty = true;
+  }
+
+  /* ---------- animation engine ---------- */
+  const dots = [];
+  let raf = null, bulk = null, busy = false;
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  function launch(run, opts) {
+    const pts = [], stops = [];
+    run.path.forEach((k, i) => {
+      const L = LEGS[k];
+      for (let j = i === 0 ? 0 : 1; j < L.length; j++) pts.push(L[j]);
+      if (i < run.path.length - 1) stops.push({ at: pts.length - 1, i });
+    });
+    const veh = VEH[run.dec], scale = opts.scale || 1;
+    const last = pts.length - 1;
+    pts[last] = [pts[last][0] - veh.front * scale - 4, pts[last][1]];
+    let t = 0, ang = 0; const segs = [], events = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const dur = dist(pts[i], pts[i + 1]) / opts.speed;
+      ang = Math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]) * 180 / Math.PI;
+      segs.push({ a: pts[i], b: pts[i + 1], t0: t, t1: t + dur, ang }); t += dur;
+      const s = stops.find(s => s.at === i + 1);
+      if (s) {
+        events.push({ t, k: s.i });
+        if (opts.pause) { segs.push({ a: pts[i + 1], b: pts[i + 1], t0: t, t1: t + opts.pause, ang }); t += opts.pause; }
+      }
+    }
+    const el = mk('use', { href: veh.id }, gDots);
+    place(el, pts[0][0], pts[0][1], segs[0].ang, scale);
+    dots.push({ run, segs, events, ev: 0, si: 0, total: t, start: performance.now(), el, scale,
+                single: !!opts.single, onEvent: opts.onEvent, onDone: opts.onDone });
+    kick();
+  }
+  function place(el, x, y, a, sc) {
+    el.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${a.toFixed(1)}) scale(${sc})`);
+  }
+  function park(d) {
+    const s = d.segs[d.segs.length - 1];
+    place(d.el, s.b[0], s.b[1], s.ang, d.scale);
+    parked = d.el;
+    if (d.run.leaf === 'fail') {
+      const smoke = mk('g', {}, d.el.parentNode);
+      [0, 600, 1200].forEach((delay, i) => mk('circle', {
+        cx: s.b[0] - 8 + i * 6, cy: s.b[1] - 26, r: 10, class: 'puff', style: `animation-delay:${delay}ms`
+      }, smoke));
+      const car = d.el;
+      parked = { remove() { car.remove(); smoke.remove(); } };
+    }
+  }
+  function kick() { if (!raf) raf = requestAnimationFrame(tick); }
+  function tick(now) {
+    if (bulk) {
+      const target = Math.min(bulk.total, Math.ceil((now - bulk.start) / bulk.window * bulk.total));
+      while (bulk.launched < target) {
+        bulk.launched++;
+        launch(simulate(bulk.dec), { speed: bulk.speed, scale: bulk.scale, onDone: bulkDone });
+      }
+    }
+    for (let i = dots.length - 1; i >= 0; i--) {
+      const d = dots[i]; const t = now - d.start;
+      while (d.ev < d.events.length && d.events[d.ev].t <= t) { d.onEvent && d.onEvent(d.events[d.ev].k); d.ev++; }
+      if (t >= d.total) {
+        if (d.single) park(d); else d.el.remove();
+        dots.splice(i, 1);
+        commit(d.run, d.single); d.onDone && d.onDone(d.run);
+        continue;
+      }
+      while (d.segs[d.si].t1 < t) d.si++;
+      const s = d.segs[d.si];
+      const f = s.t1 > s.t0 ? (t - s.t0) / (s.t1 - s.t0) : 1;
+      place(d.el, s.a[0] + (s.b[0] - s.a[0]) * f, s.a[1] + (s.b[1] - s.a[1]) * f, s.ang, d.scale);
+    }
+    if (dirty) render();
+    raf = (dots.length || bulk) ? requestAnimationFrame(tick) : null;
+  }
+  function bulkDone() {
+    if (!bulk) return;
+    bulk.done++;
+    if (bulk.done % 25 === 0 || bulk.done === bulk.total) progressLog();
+    if (bulk.done === bulk.total) { const b = bulk; bulk = null; setBusy(false); finishLog(b); }
+  }
+
+  /* ---------- run controls ---------- */
+  const skip = () => $('skip').checked || reduced;
+  function runMany(dec, n) {
+    if (busy) return;
+    hideTag();
+    if (skip()) {
+      for (let i = 0; i < n; i++) commit(simulate(dec), false);
+      render();
+      finishLog({ dec, total: n });
+      return;
+    }
+    setBusy(true);
+    const big = n >= 100;
+    bulk = { dec, total: n, launched: 0, done: 0, start: performance.now(),
+             window: big ? 5000 : 2200, speed: big ? 1.7 : 0.9, scale: big ? 0.42 : 0.62 };
+    progressLog();
+    kick();
+  }
+  function runOnce(dec) {
+    if (busy) return;
+    hideTag();
+    const run = simulate(dec);
+    const num = (dec === 'race' ? S.race.n : S.norace.n) + 1;
+    const head = `<div class="lh">${dec === 'race' ? 'Racing' : 'Not racing'}, run #${num.toLocaleString('en-US')}</div>`;
+    if (skip()) {
+      commit(run, true); render();
+      if (run.draws.length) showDraw(run.draws.length - 1, run.draws[run.draws.length - 1], false);
+      else showSure();
+      logEl.innerHTML = head + stepsFor(run, run.draws.length) + payoffLine(run);
+      return;
+    }
+    setBusy(true);
+    logEl.innerHTML = head + (dec === 'race' ? '<p>The car heads to the track...</p>' : '<p>Carter withdraws. The car goes home on its trailer.</p>');
+    if (dec === 'norace') showSure();
+    launch(run, {
+      speed: 0.45, pause: 1900, scale: 1.15, single: true,
+      onEvent: k => {
+        showDraw(k, run.draws[k], true);
+        setTimeout(() => { logEl.innerHTML = head + stepsFor(run, k + 1); }, 720);
+      },
+      onDone: () => {
+        clearPulse();
+        logEl.innerHTML = head + stepsFor(run, run.draws.length) + payoffLine(run);
+        setBusy(false);
+      }
+    });
+  }
+  function stepsFor(run, k) {
+    if (run.dec === 'norace') return '<p>No chance node on this branch: no random draw.</p>';
+    let h = '';
+    if (k >= 1) {
+      const u = run.draws[0];
+      h += u < p
+        ? `<p>Engine: nature draws <b class="num">${u.toFixed(3)}</b>, below p = ${f2(p)}. The car finishes.</p>`
+        : `<p>Engine: nature draws <b class="num">${u.toFixed(3)}</b>, not below p = ${f2(p)}. The engine fails.</p>`;
+    }
+    if (k >= 2) {
+      const u = run.draws[1];
+      h += u < 0.8
+        ? `<p>Placing: nature draws <b class="num">${u.toFixed(3)}</b>, below 0.8. Top 5.</p>`
+        : `<p>Placing: nature draws <b class="num">${u.toFixed(3)}</b>, not below 0.8. Outside the top 5.</p>`;
+    }
+    return h;
+  }
+  function payoffLine(run) {
+    return `<p>Payoff <b class="num" style="font-size:22px">${fmt(run.pay)}</b><span class="chip">${verdict(run)}</span></p>`;
+  }
+  function progressLog() {
+    if (!bulk) return;
+    logEl.innerHTML = `<div class="lh">${bulk.dec === 'race' ? 'Racing' : 'Not racing'} ${bulk.total.toLocaleString('en-US')} times</div><p><b class="num">${bulk.done.toLocaleString('en-US')}</b> of ${bulk.total.toLocaleString('en-US')} race days done.</p>`;
+  }
+  function finishLog(b) {
+    const n = b.total.toLocaleString('en-US');
+    if (b.dec === 'race') {
+      const R = S.race;
+      logEl.innerHTML = `<div class="lh">Raced ${n} more times</div><p>Across all ${R.n.toLocaleString('en-US')} races so far: ${R.top5.toLocaleString('en-US')} top-5 finishes, ${R.not5.toLocaleString('en-US')} finishes outside the top 5, ${R.fail.toLocaleString('en-US')} engine failures.</p>`;
+    } else {
+      logEl.innerHTML = `<div class="lh">Sat out ${n} more times</div><p>Every one of them paid ${fmt(SURE)}. This branch has no uncertainty.</p>`;
+    }
+  }
+  function setBusy(b) {
+    busy = b;
+    ['r1', 'r10', 'r1000', 'n1', 'n10', 'n1000', 'reset', 'p'].forEach(id => $(id).disabled = b);
+  }
+  const logEl = $('log');
+  $('r1').onclick = () => runOnce('race');
+  $('n1').onclick = () => runOnce('norace');
+  $('r10').onclick = () => runMany('race', 10);
+  $('n10').onclick = () => runMany('norace', 10);
+  $('r1000').onclick = () => runMany('race', 1000);
+  $('n1000').onclick = () => runMany('norace', 1000);
+  $('reset').onclick = () => {
+    fresh(); hideTag(); dirty = true; render();
+    logEl.innerHTML = '<div class="lh">Runs cleared</div><p>Pick a decision to start again.</p>';
+  };
+  $('sort').onchange = () => { dirty = true; render(); };
+  $('p').addEventListener('input', e => {
+    p = parseFloat(e.target.value);
+    fresh(); hideTag(); dirty = true; render();
+    logEl.innerHTML = `<div class="lh">p set to ${f2(p)}</div><p>Runs cleared so every run uses the same probability.</p>`;
+  });
+
+  /* ---------- render ---------- */
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function drawWaffle(cv, seq, colors) {
+    const w = cv.clientWidth; if (!w) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cols = 50, rows = 20, cell = w / cols, h = cell * rows;
+    const W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    let items = seq.length > 1000 ? seq.slice(-1000) : seq;
+    if ($('sort').checked) {
+      const order = { top5: 0, not5: 1, norace: 1, fail: 2 };
+      items = items.slice().sort((a, b) => order[a] - order[b]);
+    }
+    const gap = Math.max(1, cell * 0.16);
+    for (let i = 0; i < 1000; i++) {
+      const r = Math.floor(i / cols), c = i % cols;
+      ctx.fillStyle = i < items.length ? colors[items[i]] : colors.empty;
+      ctx.fillRect(c * cell + gap / 2, r * cell + gap / 2, cell - gap, cell - gap);
+    }
+  }
+  function render() {
+    dirty = false;
+    const R = S.race, N = S.norace;
+    const total = R.n + N.n;
+    const fin = R.top5 + R.not5;
+    const counts = { race: R.n, norace: N.n, finish: fin, fail: R.fail, top5: R.top5, not5: R.not5 };
+    for (const k in flows) {
+      const share = total ? counts[k] / total : 0;
+      flows[k].setAttribute('stroke-width', share ? (4 + 30 * share).toFixed(1) : 0);
+    }
+    T.pFinish.textContent = `p = ${f2(p)}`;
+    T.pFail.textContent = `1 - p = ${f2(1 - p)}`;
+    T.race.textContent = R.n ? `chosen ${R.n.toLocaleString('en-US')} times` : '';
+    T.norace.textContent = N.n ? `chosen ${N.n.toLocaleString('en-US')} times` : '';
+    T.finish.textContent = R.n ? `happened in ${pct(fin, R.n)} of races` : '';
+    T.fail.textContent = R.n ? `happened in ${pct(R.fail, R.n)} of races` : '';
+    T.top5.textContent = fin ? `${pct(R.top5, fin)} of finishes` : '';
+    T.not5.textContent = fin ? `${pct(R.not5, fin)} of finishes` : '';
+    const leafN = { top5: R.top5, not5: R.not5, fail: R.fail, norace: N.n };
+    for (const k in leafEls) {
+      leafEls[k].c.textContent = leafN[k].toLocaleString('en-US');
+      const base = k === 'norace' ? N.n : R.n;
+      leafEls[k].cp.textContent = base ? `${pct(leafN[k], base)} of ${k === 'norace' ? 'runs' : 'races'}` : 'runs';
+    }
+
+    const evRace = 2400000 * p;
+    $('pval').textContent = f2(p);
+    $('ev-race').textContent = fmt(evRace);
+    $('race-ev').textContent = fmt(evRace);
+    const tie = Math.abs(p - 1 / 3) < 0.005;
+    $('ev-race-box').classList.toggle('best', !tie && evRace > SURE);
+    $('ev-no-box').classList.toggle('best', !tie && evRace < SURE);
+    $('ev-race-tag').textContent = !tie && evRace > SURE ? 'Better' : '';
+    $('ev-no-tag').textContent = !tie && evRace < SURE ? 'Better' : (tie ? 'About equal' : '');
+
+    $('race-n').textContent = R.n.toLocaleString('en-US');
+    ['top5', 'not5', 'fail'].forEach(k => {
+      $('race-' + k).textContent = R[k].toLocaleString('en-US');
+      $('race-' + k + '-p').textContent = pct(R[k], R.n);
+    });
+    $('race-avg').textContent = R.n ? fmt(R.sum / R.n) : 'n/a';
+    $('no-n').textContent = N.n.toLocaleString('en-US');
+    $('no-cnt').textContent = N.n.toLocaleString('en-US');
+    $('no-p').textContent = pct(N.n, N.n);
+    $('no-avg').textContent = N.n ? fmt(N.sum / N.n) : 'n/a';
+    $('race-recent').hidden = R.n <= 1000;
+    $('no-recent').hidden = N.n <= 1000;
+
+    const colors = { top5: cssVar('--win'), not5: cssVar('--mid'), norace: cssVar('--mid'), fail: cssVar('--bust'), empty: cssVar('--empty') };
+    drawWaffle($('wf-race'), R.seq, colors);
+    drawWaffle($('wf-no'), N.seq, colors);
+
+    renderInsight(evRace, tie);
+  }
+  function renderInsight(evRace, tie) {
+    const R = S.race, N = S.norace;
+    const el = $('insight');
+    const better = tie ? null : (evRace > SURE ? 'race' : 'norace');
+    let h = '';
+    if (!R.n && !N.n) {
+      h = better === 'norace'
+        ? `<p><strong>Racing can produce the best payoff on this page and still be the worse decision.</strong></p><p>With p = ${f2(p)}, racing is worth ${fmt(evRace)} on average, against a sure ${fmt(SURE)} for sitting out. Run both and compare.</p>`
+        : better === 'race'
+          ? `<p><strong>With p = ${f2(p)}, racing is the better decision.</strong> It is worth ${fmt(evRace)} on average, against a sure ${fmt(SURE)}. It can still end at $0. Run it and see how often.</p>`
+          : `<p><strong>At p = 1/3 the two decisions have the same expected value.</strong> Racing only adds risk.</p>`;
+      el.innerHTML = h; return;
+    }
+    if (R.n) {
+      h += `<p><strong>Racing beat the sure ${fmt(SURE)} in ${R.top5.toLocaleString('en-US')} of ${R.n.toLocaleString('en-US')} races (${pct(R.top5, R.n)}). It did worse in ${R.fail.toLocaleString('en-US')} (${pct(R.fail, R.n)}).</strong></p>`;
+      if (better === 'norace') h += `<p>Each top-5 finish is dumb luck, a great outcome from a bad decision. Over many races the bad decision averages ${fmt(R.sum / R.n)}, below the ${fmt(SURE)} the good decision delivers every time.</p>`;
+      else if (better === 'race') h += `<p>Each engine failure is a bad break, a bad outcome from a good decision. Over many races the good decision averages ${fmt(R.sum / R.n)}, above the sure ${fmt(SURE)}.</p>`;
+      else h += `<p>At p = 1/3 racing averages about the same as sitting out, with far more spread.</p>`;
+    } else {
+      h += `<p><strong>Not racing paid ${fmt(SURE)} in all ${N.n.toLocaleString('en-US')} runs.</strong> Now run the race and compare the two grids.</p>`;
+    }
+    el.innerHTML = h;
+  }
+
+  let rz;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 80); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
+  new MutationObserver(() => render()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+  render();
+})();
+</script>
+</body>
+</html>
